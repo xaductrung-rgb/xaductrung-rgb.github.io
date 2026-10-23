@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IndieDev & AI SaaS Instant Source Store</title>
+  <style>
+    :root {
+      --bg: #050811;
+      --card: #0f172a;
+      --border: #1e293b;
+      --accent: #10b981;
+      --blue: #3b82f6;
+      --gold: #f59e0b;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 32px 16px;
+      line-height: 1.6;
+    }
+    .wrap { max-width: 1180px; margin: 0 auto; }
+    .hero {
+      text-align: center;
+      padding: 40px 24px;
+      background: radial-gradient(circle at top, #064e3b 0%, #0f172a 75%);
+      border: 1px solid var(--accent);
+      border-radius: 20px;
+      margin-bottom: 36px;
+    }
+    .hero h1 { font-size: 2.2rem; margin-bottom: 10px; }
+    .hero p { color: #a7f3d0; font-size: 1.05rem; max-width: 720px; margin: 0 auto; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 24px;
+    }
+    .product {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .price-tag {
+      display: inline-block;
+      background: rgba(16, 185, 129, 0.18);
+      color: #34d399;
+      font-weight: 800;
+      font-size: 1.25rem;
+      padding: 4px 14px;
+      border-radius: 99px;
+      margin-bottom: 12px;
+    }
+    .product h2 { font-size: 1.25rem; margin-bottom: 8px; }
+    .product p.tagline { color: var(--muted); font-size: 0.92rem; margin-bottom: 16px; }
+    .pay-box {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .btn {
+      display: block;
+      width: 100%;
+      text-align: center;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-weight: 700;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .btn-paypal { background: #ffc439; color: #111827; }
+    .btn-vietqr { background: var(--accent); color: #022c22; }
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: var(--card);
+      border: 1px solid var(--accent);
+      border-radius: 16px;
+      max-width: 440px;
+      width: 100%;
+      padding: 24px;
+      text-align: center;
+    }
+    .modal-content img {
+      max-width: 260px;
+      width: 100%;
+      border-radius: 12px;
+      margin: 14px auto;
+      background: #fff;
+      padding: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <h1>⚡ Instant Commercial Source Code & Game Bundles</h1>
+      <p>100% Ready-to-Monetize HTML5 Games, 3D WebGL Templates, and Client-Side AI SaaS Tools. Instant Automatic Cloud ZIP Download after Checkout.</p>
+    </div>
+
+    <div class="grid">
+      
+        <div class="product">
+          <div>
+            <span class="price-tag">$49 USD (~1.225.000đ)</span>
+            <h2>5-in-1 Viral HTML5 & Mobile Arcade Games Mega Bundle</h2>
+            <p class="tagline">Five complete, ready-to-monetize HTML5/Mobile casual games with zero external dependencies.</p>
+          </div>
+          <div class="pay-box">
+            <a class="btn btn-paypal" href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=xaductrung%40gmail.com&item_name=5-in-1%20Viral%20HTML5%20%26%20Mobile%20Arcade%20Games%20Mega%20Bundle&amount=49&currency_code=USD&return=https%3A%2F%2Ffiles.catbox.moe%2Fytghdr.zip" target="_blank">💳 Buy Now with PayPal ($49) — Auto Download</a>
+            <button class="btn btn-vietqr" onclick="openVietQR('5-in-1 Viral HTML5 & Mobile Arcade Games Mega Bundle', '1.225.000đ', 'https://img.vietqr.io/image/970422-5135146320807-compact2.png?amount=1225000&addInfo=MUA%20HTML5-ARCADE-MEGA-BUNDLE&accountName=XA%20DUC%20TRUNG')">🏦 Chuyển Khoản MB Bank VietQR (1.225.000đ)</button>
+          </div>
+        </div>
+        <div class="product">
+          <div>
+            <span class="price-tag">$39 USD (~975.000đ)</span>
+            <h2>Smart Document Scanner, A4 CleanScan & PDF Converter Pro (SaaS Source)</h2>
+            <p class="tagline">Complete client-side AI document whitening, perspective deskew, and multi-format PDF converter web app.</p>
+          </div>
+          <div class="pay-box">
+            <a class="btn btn-paypal" href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=xaductrung%40gmail.com&item_name=Smart%20Document%20Scanner%2C%20A4%20CleanScan%20%26%20PDF%20Converter%20Pro%20(SaaS%20Source)&amount=39&currency_code=USD" target="_blank">💳 Buy Now with PayPal ($39) — Auto Download</a>
+            <button class="btn btn-vietqr" onclick="openVietQR('Smart Document Scanner, A4 CleanScan & PDF Converter Pro (SaaS Source)', '975.000đ', 'https://img.vietqr.io/image/970422-5135146320807-compact2.png?amount=975000&addInfo=MUA%20SMART-SCANNER-A4-PRO-SUITE&accountName=XA%20DUC%20TRUNG')">🏦 Chuyển Khoản MB Bank VietQR (975.000đ)</button>
+          </div>
+        </div>
+        <div class="product">
+          <div>
+            <span class="price-tag">$59 USD (~1.475.000đ)</span>
+            <h2>3D Battle Royale & Rebirth Empire Idle Tycoon Source Bundle</h2>
+            <p class="tagline">3D WebGL Shooter Engine + Deep Idle Tycoon Strategy Game full source code.</p>
+          </div>
+          <div class="pay-box">
+            <a class="btn btn-paypal" href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=xaductrung%40gmail.com&item_name=3D%20Battle%20Royale%20%26%20Rebirth%20Empire%20Idle%20Tycoon%20Source%20Bundle&amount=59&currency_code=USD&return=https%3A%2F%2Ffiles.catbox.moe%2Fedrhd8.zip" target="_blank">💳 Buy Now with PayPal ($59) — Auto Download</a>
+            <button class="btn btn-vietqr" onclick="openVietQR('3D Battle Royale & Rebirth Empire Idle Tycoon Source Bundle', '1.475.000đ', 'https://img.vietqr.io/image/970422-5135146320807-compact2.png?amount=1475000&addInfo=MUA%203D-ACTION-EMPIRE-BUNDLE&accountName=XA%20DUC%20TRUNG')">🏦 Chuyển Khoản MB Bank VietQR (1.475.000đ)</button>
+          </div>
+        </div>
+    </div>
+  </div>
+
+  <div class="modal" id="qrModal" onclick="this.style.display='none'">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <h3 id="qrTitle">Thanh Toán Chuyển Khoản VietQR</h3>
+      <p style="color:#94a3b8;font-size:0.85rem;margin-top:4px;">Ngân hàng: <strong>MB Bank (Ngân hàng Quân Đội - Nhận Ngoại Tệ & VNĐ)</strong> • STK: <strong>5135146320807</strong> (XA DUC TRUNG)</p>
+      <img id="qrImg" src="" alt="VietQR Payment" />
+      <p id="qrAmount" style="color:#34d399;font-weight:700;margin-bottom:12px;"></p>
+      <button class="btn btn-vietqr" onclick="document.getElementById('qrModal').style.display='none'">Đóng</button>
+    </div>
+  </div>
+
+  <script>
+    function openVietQR(title, amountText, imgUrl) {
+      document.getElementById('qrTitle').textContent = title;
+      document.getElementById('qrAmount').textContent = 'Số tiền: ' + amountText;
+      document.getElementById('qrImg').src = imgUrl;
+      document.getElementById('qrModal').style.display = 'flex';
+    }
+  </script>
+</body>
+</html>
