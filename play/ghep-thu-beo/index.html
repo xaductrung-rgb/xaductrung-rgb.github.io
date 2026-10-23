@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Ghép Thú Béo Hợp Thể - Cửa Hàng & Tùy Chọn Nâng Cao</title>
+  <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      padding-top: env(safe-area-inset-top, 0px);
+      overflow: hidden;
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    canvas {
+      display: block;
+      touch-action: none;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    /* Offline-first utility styles for Android WebView */
+    .flex { display: flex; }
+    .flex-1 { flex: 1 1 0%; }
+    .flex-wrap { flex-wrap: wrap; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .justify-center { justify-content: center; }
+    .shrink-0 { flex-shrink: 0; }
+    .gap-1 { gap: 0.25rem; }
+    .gap-1\.5 { gap: 0.375rem; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 0.75rem; }
+    .px-2 { padding-left: 0.5rem; padding-right: 0.5rem; }
+    .px-2\.5 { padding-left: 0.625rem; padding-right: 0.625rem; }
+    .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .px-4 { padding-left: 1rem; padding-right: 1rem; }
+    .py-0\.5 { padding-top: 0.125rem; padding-bottom: 0.125rem; }
+    .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+    .py-1\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+    .py-2\.5 { padding-top: 0.625rem; padding-bottom: 0.625rem; }
+    .p-2 { padding: 0.5rem; }
+    .p-2\.5 { padding: 0.625rem; }
+    .p-3 { padding: 0.75rem; }
+    .p-4 { padding: 1rem; }
+    .p-5 { padding: 1.25rem; }
+    .pb-3 { padding-bottom: 0.75rem; }
+    .mb-1\.5 { margin-bottom: 0.375rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
+    .mb-3 { margin-bottom: 0.75rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mt-0\.5 { margin-top: 0.125rem; }
+    .mt-3 { margin-top: 0.75rem; }
+    .w-full { width: 100%; }
+    .h-full { height: 100%; }
+    .max-h-full { max-height: 100%; }
+    .max-w-2xl { max-width: 42rem; }
+    .overflow-hidden { overflow: hidden; }
+    .overflow-y-auto { overflow-y: auto; }
+    .relative { position: relative; }
+    .absolute { position: absolute; }
+    .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+    .z-20 { z-index: 20; }
+    .hidden { display: none !important; }
+    .grid { display: grid; }
+    .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+    .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    @media (min-width: 640px) {
+      .sm\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .sm\:grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    }
+    .rounded-lg { border-radius: 0.5rem; }
+    .rounded-xl { border-radius: 0.75rem; }
+    .rounded-2xl { border-radius: 1rem; }
+    .rounded-full { border-radius: 9999px; }
+    .border { border: 1px solid #334155; }
+    .border-2 { border-width: 2px; border-style: solid; }
+    .border-b { border-bottom: 1px solid #334155; }
+    .border-slate-700 { border-color: #334155; }
+    .border-amber-400 { border-color: #fbbf24; }
+    .border-sky-400 { border-color: #38bdf8; }
+    .border-emerald-500\/40 { border-color: rgba(16, 185, 129, 0.4); }
+    .border-pink-500\/40 { border-color: rgba(236, 72, 153, 0.4); }
+    .bg-slate-900 { background-color: #0f172a; }
+    .bg-slate-800 { background-color: #1e293b; }
+    .bg-slate-700 { background-color: #334155; }
+    .bg-slate-950\/85 { background-color: rgba(2, 6, 23, 0.85); }
+    .bg-amber-400 { background-color: #fbbf24; }
+    .bg-amber-400\/15 { background-color: rgba(251, 191, 36, 0.15); }
+    .bg-amber-400\/20 { background-color: rgba(251, 191, 36, 0.2); }
+    .bg-pink-500 { background-color: #ec4899; }
+    .bg-rose-500 { background-color: #f43f5e; }
+    .bg-rose-600 { background-color: #e11d48; }
+    .bg-indigo-500 { background-color: #6366f1; }
+    .bg-emerald-500 { background-color: #10b981; }
+    .bg-emerald-500\/20 { background-color: rgba(16, 185, 129, 0.2); }
+    .bg-sky-500 { background-color: #0ea5e9; }
+    .text-white { color: #ffffff; }
+    .text-slate-900 { color: #0f172a; }
+    .text-slate-400 { color: #94a3b8; }
+    .text-amber-300 { color: #fcd34d; }
+    .text-sky-300 { color: #7dd3fc; }
+    .text-emerald-400 { color: #34d399; }
+    .text-pink-400 { color: #f472b6; }
+    .text-rose-400 { color: #fb7185; }
+    .text-xs { font-size: 0.75rem; line-height: 1rem; }
+    .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+    .text-base { font-size: 1rem; line-height: 1.5rem; }
+    .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+    .font-bold { font-weight: 700; }
+    .font-extrabold { font-weight: 800; }
+    .text-left { text-align: left; }
+    .text-center { text-align: center; }
+    button { border: none; cursor: pointer; font-family: inherit; }
+    button:active { transform: scale(0.96); }
+  </style>
+</head>
+<body>
+  <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-slate-900 border-b border-slate-700 shrink-0">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl">🐣🐷🦖</span>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-extrabold text-sm sm:text-base leading-tight text-amber-300">GHÉP THÚ BÉO HỢP THỂ</h1>
+          <span id="badgeDifficulty" class="px-2 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            🐥 Bình Thường
+          </span>
+        </div>
+        <p class="text-slate-400 text-xs">Ghép thú kiếm 🪙 Xu Vàng để mua đạo cụ & nâng cấp hộp trong Cửa Hàng!</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-1.5 flex-wrap">
+      <div class="px-3 py-1 rounded-xl text-xs font-extrabold bg-amber-400/20 text-amber-300 border border-amber-400/40 flex items-center gap-1">
+        🪙 <span id="coinDisplay">120</span> Xu
+      </div>
+
+      <button id="btnShake" class="px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-amber-400 text-slate-900 shadow active:scale-95 transition">
+        🫨 Lắc (<span id="shakeCount">3</span>)
+      </button>
+      <button id="btnWand" class="px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-pink-500 text-white shadow active:scale-95 transition">
+        ✨ Đũa (<span id="wandCount">2</span>)
+      </button>
+      <button id="btnBomb" class="px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-rose-600 text-white shadow active:scale-95 transition">
+        💣 Bom (<span id="bombCount">1</span>)
+      </button>
+      <button id="btnRainbow" class="px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-indigo-500 text-white shadow active:scale-95 transition">
+        🌈 Vạn Năng (<span id="rainbowCount">1</span>)
+      </button>
+
+      <button id="btnOpenShop" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-500 text-white shadow">
+        🛒 Cửa Hàng
+      </button>
+      <button id="btnOpenSettings" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-700 text-white">
+        ⚙️ Độ Khó & Tùy Chọn
+      </button>
+    </div>
+  </div>
+
+  <div class="relative flex-1 w-full overflow-hidden">
+    <canvas id="gameCanvas" class="w-full h-full"></canvas>
+
+    <!-- MODAL 1: CỬA HÀNG TẠP HÓA -->
+    <div id="shopModal" class="hidden absolute inset-0 bg-slate-950/85 backdrop-blur-sm z-20 flex items-center justify-center p-4">
+      <div class="bg-slate-900 text-white border-2 border-amber-400 rounded-2xl w-full max-w-2xl p-5 shadow-2xl max-h-full overflow-y-auto">
+        <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">🛒</span>
+            <div>
+              <h2 class="font-extrabold text-base text-amber-300">CỬA HÀNG TẠP HÓA THÚ BÉO</h2>
+              <p class="text-xs text-slate-400">Dùng Xu Vàng kiếm được khi ghép thú để mua phép thuật & nâng cấp vĩnh viễn!</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <span class="px-3 py-1 rounded-full bg-amber-400 text-slate-900 font-extrabold text-xs">
+              🪙 Ví của bạn: <span id="shopCoinDisplay">120</span> Xu
+            </span>
+            <button id="btnCloseShop" class="px-3 py-1 rounded-lg bg-rose-500 text-white font-bold text-xs">✖ Đóng</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div class="p-3 rounded-xl border border-slate-700 bg-slate-800 flex items-center justify-between">
+            <div>
+              <div class="font-extrabold text-sm">🫨 +2 Lượt Lắc Hộp</div>
+              <div class="text-slate-400">Hất tung đám thú để tự nổ dây chuyền</div>
+            </div>
+            <button onclick="buyItem('shake', 25)" class="px-3 py-1.5 rounded-lg bg-amber-400 text-slate-900 font-extrabold shrink-0">
+              Mua 25 🪙
+            </button>
+          </div>
+
+          <div class="p-3 rounded-xl border border-slate-700 bg-slate-800 flex items-center justify-between">
+            <div>
+              <div class="font-extrabold text-sm">✨ +2 Đũa Thần Biến Hình</div>
+              <div class="text-slate-400">Nâng cấp toàn bộ thú nhỏ nhất lên 1 bậc</div>
+            </div>
+            <button onclick="buyItem('wand', 35)" class="px-3 py-1.5 rounded-lg bg-amber-400 text-slate-900 font-extrabold shrink-0">
+              Mua 35 🪙
+            </button>
+          </div>
+
+          <div class="p-3 rounded-xl border border-slate-700 bg-slate-800 flex items-center justify-between">
+            <div>
+              <div class="font-extrabold text-sm">💣 +2 Bom Chọc Bụng</div>
+              <div class="text-slate-400">Phá nổ 3 con thú trên cao khi hộp sắp đầy</div>
+            </div>
+            <button onclick="buyItem('bomb', 40)" class="px-3 py-1.5 rounded-lg bg-amber-400 text-slate-900 font-extrabold shrink-0">
+              Mua 40 🪙
+            </button>
+          </div>
+
+          <div class="p-3 rounded-xl border border-slate-700 bg-slate-800 flex items-center justify-between">
+            <div>
+              <div class="font-extrabold text-sm">🌈 +2 Cầu Vồng Vạn Năng</div>
+              <div class="text-slate-400">Chạm vào thú nào cũng biến thành cấp tiếp theo!</div>
+            </div>
+            <button onclick="buyItem('rainbow', 50)" class="px-3 py-1.5 rounded-lg bg-amber-400 text-slate-900 font-extrabold shrink-0">
+              Mua 50 🪙
+            </button>
+          </div>
+
+          <div class="p-3 rounded-xl border-2 border-emerald-500/40 bg-slate-800 flex items-center justify-between">
+            <div>
+              <div class="font-extrabold text-sm text-emerald-400">📦 Mở Rộng Hộp Kẹo (<span id="boxLvLabel">Cấp 1/4</span>)</div>
+              <div class="text-slate-400">Tăng chiều rộng hộp vĩnh viễn, chứa nhiều thú hơn</div>
+            </div>
+            <button onclick="buyItem('boxSize', 80)" class="px-3 py-1.5 rounded-lg bg-emerald-500 text-white font-extrabold shrink-0">
+              Nâng 80 🪙
+            </button>
+          </div>
+
+          <div class="p-3 rounded-xl border-2 border-pink-500/40 bg-slate-800 flex items-center justify-between">
+            <div>
+              <div class="font-extrabold text-sm text-pink-400">💰 Bùa Thần Tài (<span id="greedLvLabel">Cấp 1/5</span>)</div>
+              <div class="text-slate-400">Tăng +35% Xu Vàng nhận được mỗi lần ghép</div>
+            </div>
+            <button onclick="buyItem('coinBoost', 90)" class="px-3 py-1.5 rounded-lg bg-pink-500 text-white font-extrabold shrink-0">
+              Nâng 90 🪙
+            </button>
+          </div>
+        </div>
+
+        <!-- KHU VỰC KIẾM TIỀN: XEM QUẢNG CÁO (ADMOB) & NẠP TIỀN THẬT (GOOGLE PLAY IAP) -->
+        <div class="mt-4 pt-3 border-t border-slate-700">
+          <div class="flex items-center justify-between mb-2">
+            <div class="font-extrabold text-sm text-amber-300">💎 NẠP XU & GÓI VIP (GOOGLE PLAY BILLING & ADMOB)</div>
+            <button onclick="IAP.restore()" class="px-2.5 py-1 rounded-lg bg-slate-700 text-white font-bold text-xs">🔄 Khôi phục giao dịch</button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+            <!-- Xem Quảng Cáo nhận thưởng miễn phí -->
+            <div class="p-3 rounded-xl border-2 border-amber-400 bg-amber-400/15 flex items-center justify-between">
+              <div>
+                <div class="font-extrabold text-sm text-amber-300">🎬 Xem Video Quảng Cáo</div>
+                <div class="text-slate-400">Nhận ngay +150 🪙 Xu Vàng & +1 Lắc Hộp miễn phí!</div>
+              </div>
+              <button id="btnWatchAdShop" onclick="watchRewardedAdForCoins()" class="px-3 py-1.5 rounded-lg bg-amber-400 text-slate-900 font-extrabold shrink-0">
+                ▶ XEM QC (+150 🪙)
+              </button>
+            </div>
+
+            <!-- Gói Tắt Quảng Cáo Vĩnh Viễn -->
+            <div class="p-3 rounded-xl border-2 border-rose-500 bg-slate-800 flex items-center justify-between">
+              <div>
+                <div class="font-extrabold text-sm text-rose-400">🚫 Tắt Hẳn Quảng Cáo Vĩnh Viễn</div>
+                <div class="text-slate-400">Xóa quảng cáo xen kẽ + Nhận thưởng QC không cần xem!</div>
+              </div>
+              <button id="btnBuyNoAds" onclick="IAP.buy('remove_ads')" class="px-3 py-1.5 rounded-lg bg-rose-500 text-white font-extrabold shrink-0">
+                49.000đ
+              </button>
+            </div>
+
+            <!-- Túi 1.000 Xu -->
+            <div class="p-3 rounded-xl border border-slate-700 bg-slate-800 flex items-center justify-between">
+              <div>
+                <div class="font-extrabold text-sm text-emerald-400">💰 Túi Xu Vàng (+1.000 🪙)</div>
+                <div class="text-slate-400">Cộng ngay 1.000 Xu Vàng vào ví</div>
+              </div>
+              <button id="btnBuyCoins1000" onclick="IAP.buy('coins_1000')" class="px-3 py-1.5 rounded-lg bg-emerald-500 text-white font-extrabold shrink-0">
+                22.000đ
+              </button>
+            </div>
+
+            <!-- Gói Khởi Đầu Siêu Cấp -->
+            <div class="p-3 rounded-xl border border-slate-700 bg-slate-800 flex items-center justify-between">
+              <div>
+                <div class="font-extrabold text-sm text-sky-300">⭐ Rương Đại Gia VIP</div>
+                <div class="text-slate-400">+5.000 🪙 Xu + 5 Cầu Vồng 🌈 + 5 Bom 💣 + Tắt QC</div>
+              </div>
+              <button id="btnBuyStarter" onclick="IAP.buy('starter_pack')" class="px-3 py-1.5 rounded-lg bg-sky-500 text-white font-extrabold shrink-0">
+                79.000đ
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="shopToast" class="mt-3 text-center font-bold text-xs text-emerald-400 h-4"></div>
+      </div>
+    </div>
+
+    <!-- MODAL 2: ĐỘ KHÓ & TÙY CHỌN NÂNG CAO -->
+    <div id="settingsModal" class="hidden absolute inset-0 bg-slate-950/85 backdrop-blur-sm z-20 flex items-center justify-center p-4">
+      <div class="bg-slate-900 text-white border-2 border-sky-400 rounded-2xl w-full max-w-2xl p-5 shadow-2xl max-h-full overflow-y-auto text-xs">
+        <div class="flex items-center justify-between border-b border-slate-700 pb-3 mb-4">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">⚙️</span>
+            <div>
+              <h2 class="font-extrabold text-base text-sky-300">CHỌN ĐỘ KHÓ & TÙY CHỈNH NÂNG CAO</h2>
+              <p class="text-xs text-slate-400">Tùy biến luật chơi cho bé nhỏ hoặc thử thách siêu khó cho người lớn!</p>
+            </div>
+          </div>
+          <button id="btnCloseSettings" class="px-3 py-1 rounded-lg bg-sky-500 text-white font-bold text-xs">✔ Xong</button>
+        </div>
+
+        <div class="mb-4">
+          <div class="font-extrabold mb-2 text-sm">1. Chọn Chế Độ Độ Khó:</div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button onclick="setDifficulty('BABY')" id="diff_BABY" class="p-2.5 rounded-xl border-2 text-left transition">
+              <div class="font-extrabold">🍼 Bé Tập Chơi</div>
+              <div class="text-slate-400 mt-0.5">Không bao giờ thua! Đầy hộp tự nổ tặng xu.</div>
+            </button>
+            <button onclick="setDifficulty('NORMAL')" id="diff_NORMAL" class="p-2.5 rounded-xl border-2 text-left transition">
+              <div class="font-extrabold">🐥 Bình Thường</div>
+              <div class="text-slate-400 mt-0.5">Luật chuẩn kinh điển, cân bằng (x1 Xu).</div>
+            </button>
+            <button onclick="setDifficulty('HARD')" id="diff_HARD" class="p-2.5 rounded-xl border-2 text-left transition">
+              <div class="font-extrabold">🌶️ Thách Đấu</div>
+              <div class="text-slate-400 mt-0.5">Rơi kèm Cục Đá 🪨! Ghép sát đá để phá (x2 Xu).</div>
+            </button>
+            <button onclick="setDifficulty('CHAOS')" id="diff_CHAOS" class="p-2.5 rounded-xl border-2 text-left transition">
+              <div class="font-extrabold">🌪️ Hỗn Loạn Bựa</div>
+              <div class="text-slate-400 mt-0.5">Hộp nghiêng lắc lư + Thú siêu nảy (x3 Xu)!</div>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+          <div class="p-3 rounded-xl border border-slate-700 bg-slate-800">
+            <div class="font-extrabold mb-1.5">🎨 Bộ Nhân Vật (Theme):</div>
+            <select id="selTheme" class="w-full p-2 rounded-lg bg-slate-900 border border-slate-700 font-bold text-white">
+              <option value="PETS">🐣 Bộ Thú Béo Nông Trại (Mặc định)</option>
+              <option value="FOOD">🧋 Bộ Ăn Vặt Đường Phố (Trà Sữa, Lẩu...)</option>
+              <option value="ALIEN">👽 Bộ Quái Vật Vũ Trụ Ngố</option>
+            </select>
+          </div>
+
+          <div class="p-3 rounded-xl border border-slate-700 bg-slate-800">
+            <div class="font-extrabold mb-1.5">🏀 Độ Nảy Bụng Mỡ (Vật Lý):</div>
+            <select id="selBounce" class="w-full p-2 rounded-lg bg-slate-900 border border-slate-700 font-bold text-white">
+              <option value="0.35">🍮 Thạch Rau Câu (Êm ái - Dễ xếp)</option>
+              <option value="0.65">🏀 Bóng Cao Su (Nảy tưng tưng)</option>
+              <option value="0.88">🚀 Lò Xo Điên Cuồng (Siêu nảy hài hước)</option>
+            </select>
+          </div>
+
+          <div class="p-3 rounded-xl border border-slate-700 bg-slate-800 flex items-center justify-between">
+            <div>
+              <div class="font-extrabold">🤖 Chế độ Tự Động Thả (Auto-Drop)</div>
+              <div class="text-slate-400">Tự thả thú liên tục cho bé ngồi xem nổ</div>
+            </div>
+            <input type="checkbox" id="chkAutoDrop" class="w-5 h-5 accent-amber-500" />
+          </div>
+
+          <div class="p-3 rounded-xl border border-slate-700 bg-slate-800 flex items-center justify-between">
+            <div>
+              <div class="font-extrabold">🔊 Hiệu ứng Âm thanh & Chơi Mới</div>
+              <div class="text-slate-400">Bật/tắt tiếng hoặc làm mới bàn chơi</div>
+            </div>
+            <div class="flex gap-2">
+              <button id="btnToggleSoundModal" class="px-3 py-1.5 rounded-lg bg-amber-400 text-slate-900 font-bold">🔊 Bật</button>
+              <button id="btnRestartModal" class="px-3 py-1.5 rounded-lg bg-rose-500 text-white font-bold">🔄 Ván Mới</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl border border-slate-700 bg-slate-800 text-slate-400 text-xs">
+          🔒 <strong>Chính sách Quyền riêng tư & An toàn cho Trẻ em (Google Play Families):</strong> Trò chơi hoạt động 100% ngoại tuyến (Offline), không thu thập dữ liệu cá nhân, không yêu cầu đăng nhập, an toàn tuyệt đối cho trẻ em và gia đình.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    class CuteMergeAudio {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+        this.notes = [293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00, 1046.50];
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      }
+      drop() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(340, now);
+        osc.frequency.exponentialRampToValueAtTime(190, now + 0.09);
+        gain.gain.setValueAtTime(0.16, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.11);
+      }
+      merge(level) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const base = this.notes[Math.min(Math.max(0, level), this.notes.length - 1)];
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(base * 0.75, now);
+        osc.frequency.exponentialRampToValueAtTime(base * 1.5, now + 0.14);
+        gain.gain.setValueAtTime(0.26, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.19);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.2);
+      }
+      fanfare() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        [523.25, 659.25, 783.99, 1046.50].forEach((n, i) => {
+          const now = this.ctx.currentTime + i * 0.055;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(n, now);
+          gain.gain.setValueAtTime(0.13, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.14);
+        });
+      }
+    }
+
+    const sfx = new CuteMergeAudio();
+
+    const THEMES = {
+      PETS: [
+        { level: 0, name: 'Gà Con Lác', emoji: '🐣', r: 19, color: '#FEF08A', border: '#EAB308', pts: 10, sound: 'Chiếp!' },
+        { level: 1, name: 'Ếch Mỏ Chu', emoji: '🐸', r: 25, color: '#86EFAC', border: '#16A34A', pts: 25, sound: 'Ộp Ộp!' },
+        { level: 2, name: 'Chuột Má Phính', emoji: '🐹', r: 32, color: '#FDBA74', border: '#EA580C', pts: 45, sound: 'Chít!' },
+        { level: 3, name: 'Vịt Béo Ú', emoji: '🐤', r: 39, color: '#FDE047', border: '#CA8A04', pts: 80, sound: 'Quạc!' },
+        { level: 4, name: 'Mèo Ngáo Ngơ', emoji: '🐱', r: 47, color: '#A5F3FC', border: '#0891B2', pts: 130, sound: 'Meo~' },
+        { level: 5, name: 'Corgi Mông To', emoji: '🐶', r: 56, color: '#FCA5A5', border: '#DC2626', pts: 200, sound: 'Gâu!' },
+        { level: 6, name: 'Heo Hồng Phệ', emoji: '🐷', r: 66, color: '#F9A8D4', border: '#DB2777', pts: 300, sound: 'Éc Éc!' },
+        { level: 7, name: 'Gấu Trúc Bự', emoji: '🐼', r: 77, color: '#E2E8F0', border: '#334155', pts: 450, sound: 'Gừm~' },
+        { level: 8, name: 'Hà Mã Môi Dày', emoji: '🦛', r: 89, color: '#C4B5FD', border: '#7C3AED', pts: 700, sound: 'Phì Phò!' },
+        { level: 9, name: 'Khủng Long Béo', emoji: '🦖', r: 103, color: '#4ADE80', border: '#15803D', pts: 1200, sound: 'GAOOO!' }
+      ],
+      FOOD: [
+        { level: 0, name: 'Trân Châu Đen', emoji: '🫐', r: 19, color: '#E2E8F0', border: '#475569', pts: 10, sound: 'Bụp!' },
+        { level: 1, name: 'Cá Viên Chiên', emoji: '🍡', r: 25, color: '#FDE047', border: '#CA8A04', pts: 25, sound: 'Giòn!' },
+        { level: 2, name: 'Kem Ốc Quế', emoji: '🍦', r: 32, color: '#BAE6FD', border: '#0284C7', pts: 45, sound: 'Mát lạnh!' },
+        { level: 3, name: 'Xúc Xích Đức', emoji: '🌭', r: 39, color: '#FCA5A5', border: '#DC2626', pts: 80, sound: 'Ngon!' },
+        { level: 4, name: 'Trà Sữa Full', emoji: '🧋', r: 47, color: '#F9A8D4', border: '#DB2777', pts: 130, sound: 'Rột rột!' },
+        { level: 5, name: 'Đùi Gà Rán', emoji: '🍗', r: 56, color: '#FDBA74', border: '#EA580C', pts: 200, sound: 'Rộp rộp!' },
+        { level: 6, name: 'Burger Bò', emoji: '🍔', r: 66, color: '#FEF08A', border: '#D97706', pts: 300, sound: 'Măm măm!' },
+        { level: 7, name: 'Pizza Phô Mai', emoji: '🍕', r: 77, color: '#FED7AA', border: '#C2410C', pts: 450, sound: 'Kéo sợi!' },
+        { level: 8, name: 'Bánh Sinh Nhật', emoji: '🎂', r: 89, color: '#FBCFE8', border: '#BE185D', pts: 700, sound: 'Tuyệt vời!' },
+        { level: 9, name: 'Nồi Lẩu Siêu To', emoji: '🍲', r: 103, color: '#FCA5A5', border: '#B91C1C', pts: 1200, sound: 'SÔI SÙNG SỤC!' }
+      ],
+      ALIEN: [
+        { level: 0, name: 'Vi Khuẩn Ngố', emoji: '🦠', r: 19, color: '#A7F3D0', border: '#059669', pts: 10, sound: 'Bíp!' },
+        { level: 1, name: 'Ma Trơi Cute', emoji: '👻', r: 25, color: '#E2E8F0', border: '#64748B', pts: 25, sound: 'Hù!' },
+        { level: 2, name: 'Slime Tím', emoji: '👾', r: 32, color: '#DDD6FE', border: '#7C3AED', pts: 45, sound: 'Nhầy!' },
+        { level: 3, name: 'Người Sao Hỏa', emoji: '👽', r: 39, color: '#86EFAC', border: '#16A34A', pts: 80, sound: 'Zíp Zíp!' },
+        { level: 4, name: 'Robot Mắt Lác', emoji: '🤖', r: 47, color: '#BAE6FD', border: '#0284C7', pts: 130, sound: 'Boong!' },
+        { level: 5, name: 'Quái Vật 1 Mắt', emoji: '👹', r: 56, color: '#FCA5A5', border: '#DC2626', pts: 200, sound: 'Gào!' },
+        { level: 6, name: 'Đĩa Bay UFO', emoji: '🛸', r: 66, color: '#FDE047', border: '#CA8A04', pts: 300, sound: 'Vù vù!' },
+        { level: 7, name: 'Tên Lửa Đỏ', emoji: '🚀', r: 77, color: '#FDBA74', border: '#EA580C', pts: 450, sound: 'Phóng!' },
+        { level: 8, name: 'Mặt Trăng Cười', emoji: '🌝', r: 89, color: '#FEF08A', border: '#D97706', pts: 700, sound: 'Hê hê!' },
+        { level: 9, name: 'Mặt Trời Bựa', emoji: '🌞', r: 103, color: '#FDE047', border: '#B91C1C', pts: 1200, sound: 'BÙM NỔ!' }
+      ]
+    };
+
+    const store = {
+      coins: 120,
+      shakes: 3,
+      wands: 2,
+      bombs: 1,
+      rainbows: 1,
+      boxLevel: 1,
+      greedLevel: 1,
+      difficulty: 'NORMAL',
+      theme: 'PETS',
+      bounciness: 0.35,
+      autoDrop: false
+    };
+
+    function loadSave() {
+      try {
+        const raw = localStorage.getItem('ghep_thu_beo_save_v2');
+        if (raw) Object.assign(store, JSON.parse(raw));
+      } catch (e) {}
+    }
+
+    function saveGameData() {
+      try {
+        localStorage.setItem('ghep_thu_beo_save_v2', JSON.stringify(store));
+      } catch (e) {}
+      updateUI();
+    }
+
+    loadSave();
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let W = 800;
+    let H = 500;
+    let boxLeft = 180;
+    let boxRight = 560;
+    let boxTop = 58;
+    let boxBottom = 368;
+
+    function updateBoxBounds() {
+      let baseW = 350 + (store.boxLevel - 1) * 32;
+      if (store.difficulty === 'BABY') baseW += 50;
+      if (store.difficulty === 'HARD') baseW -= 28;
+
+      const boxW = Math.min(baseW, W - 26);
+      boxLeft = Math.floor((W - boxW) / 2);
+      boxRight = boxLeft + boxW;
+      boxTop = 58;
+      boxBottom = H - 48;
+    }
+
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      W = Math.max(320, Math.floor(rect.width));
+      H = Math.max(320, Math.floor(rect.height));
+      canvas.width = W;
+      canvas.height = H;
+      updateBoxBounds();
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let score = 0;
+    let highScore = 0;
+    let maxUnlockedLevel = 3;
+    let balls = [];
+    let particles = [];
+    let popups = [];
+    let currentDropLevel = 0;
+    let nextDropLevel = 1;
+    let nextIsRainbow = false;
+    let dropX = W / 2;
+    let dropCooldown = 0;
+    let screenShake = 0;
+    let gameOver = false;
+    let overLineTimer = 0;
+    let tick = 0;
+
+    function getLevels() {
+      return THEMES[store.theme] || THEMES.PETS;
+    }
+
+    function randomStarterLevel() {
+      const r = Math.random();
+      if (store.difficulty === 'BABY') return r < 0.5 ? 1 : (r < 0.85 ? 2 : 3);
+      if (r < 0.42) return 0;
+      if (r < 0.74) return 1;
+      if (r < 0.92) return 2;
+      return 3;
+    }
+
+    function initGame() {
+      updateBoxBounds();
+      balls = [];
+      particles = [];
+      popups = [];
+      score = 0;
+      gameOver = false;
+      overLineTimer = 0;
+      currentDropLevel = 0;
+      nextDropLevel = 1;
+      nextIsRainbow = false;
+      dropX = (boxLeft + boxRight) / 2;
+
+      spawnBall(boxLeft + 80, boxBottom - 40, 0);
+      spawnBall((boxLeft + boxRight) / 2, boxBottom - 40, 1);
+      spawnBall(boxRight - 80, boxBottom - 40, 0);
+
+      updateUI();
+      spawnPopup((boxLeft + boxRight) / 2, (boxTop + boxBottom) / 2 - 20, '🛒 GHÉP THÚ KIẾM XU MUA ĐỒ TRONG SHOP NHÉ!', '#F59E0B', 1.15);
+    }
+
+    function spawnBall(x, y, level, isMerged = false, specialKind = 'normal') {
+      const levels = getLevels();
+      const info = levels[Math.min(level, levels.length - 1)];
+      const r = specialKind === 'stone' ? 27 : (specialKind === 'rainbow' ? 26 : info.r);
+      const clampedX = Math.max(boxLeft + r + 2, Math.min(boxRight - r - 2, x));
+
+      balls.push({
+        id: Math.random(),
+        x: clampedX,
+        y,
+        vx: (Math.random() - 0.5) * 1.4,
+        vy: isMerged ? -3.8 : 1.5,
+        level,
+        r,
+        specialKind,
+        scalePop: isMerged ? 1.38 : 0.75,
+        angle: 0,
+        expressionTimer: isMerged ? 45 : 0,
+        mergedFlag: false
+      });
+
+      if (specialKind === 'normal' && level > maxUnlockedLevel) {
+        maxUnlockedLevel = level;
+        sfx.fanfare();
+        spawnPopup(
+          (boxLeft + boxRight) / 2,
+          boxTop + 45,
+          `🎉 MỞ KHÓA CẤP MỚI: ${info.emoji} ${info.name.toUpperCase()}!`,
+          '#EC4899',
+          1.25
+        );
+      }
+    }
+
+    function dropPetAt(clientX) {
+      if (gameOver) {
+        initGame();
+        return;
+      }
+      if (dropCooldown > 0) return;
+
+      const levels = getLevels();
+      const info = levels[currentDropLevel];
+      dropX = Math.max(boxLeft + info.r + 4, Math.min(boxRight - info.r - 4, clientX));
+
+      sfx.drop();
+      if (nextIsRainbow) {
+        spawnBall(dropX, boxTop + 14, 0, false, 'rainbow');
+        nextIsRainbow = false;
+      } else {
+        spawnBall(dropX, boxTop + 14, currentDropLevel, false, 'normal');
+      }
+
+      if ((store.difficulty === 'HARD' || store.difficulty === 'CHAOS') && Math.random() < 0.16) {
+        const stoneX = boxLeft + 40 + Math.random() * (boxRight - boxLeft - 80);
+        spawnBall(stoneX, boxTop + 10, 0, false, 'stone');
+        spawnPopup(stoneX, boxTop + 30, '🪨 CỤC ĐÁ RƠI! GHÉP SÁT BÊN ĐỂ PHÁ!', '#64748B', 1.0);
+      }
+
+      currentDropLevel = nextDropLevel;
+      nextDropLevel = randomStarterLevel();
+      dropCooldown = store.difficulty === 'HARD' ? 12 : 16;
+    }
+
+    canvas.addEventListener('pointermove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (W / rect.width);
+      const info = getLevels()[currentDropLevel];
+      dropX = Math.max(boxLeft + info.r + 4, Math.min(boxRight - info.r - 4, x));
+    });
+
+    canvas.addEventListener('pointerdown', async (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (W / rect.width);
+      const y = (e.clientY - rect.top) * (H / rect.height);
+
+      if (gameOver) {
+        // Nếu bấm vào nút "XEM QC: NỔ 5 BÓNG CHƠI TIẾP"
+        if (y >= H / 2 - 16 && y <= H / 2 + 34) {
+          const ok = await showRewardedVideo();
+          if (ok) {
+            gameOver = false;
+            overLineTimer = 0;
+            sfx.fanfare();
+            balls.sort((a, b) => a.y - b.y);
+            const removed = balls.splice(0, Math.min(5, balls.length));
+            for (const rm of removed) {
+              spawnParticles(rm.x, rm.y, '#10B981', 12, '💥');
+            }
+            spawnPopup((boxLeft + boxRight) / 2, boxTop + 50, '🎬 ĐÃ DỌN 5 BÓNG CỨU NGUY!', '#10B981', 1.25);
+          }
+          return;
+        }
+        // Ngược lại: Chơi Ván Mới + Hiện quảng cáo xen kẽ sau mỗi 2 ván
+        await maybeShowInterstitial();
+        initGame();
+        return;
+      }
+
+      dropPetAt(x);
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+        dropX = Math.max(boxLeft + 25, dropX - 28);
+      } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+        dropX = Math.min(boxRight - 25, dropX + 28);
+      } else if (e.code === 'Space' || e.code === 'Enter' || e.code === 'ArrowDown') {
+        e.preventDefault();
+        dropPetAt(dropX);
+      }
+    });
+
+    function update() {
+      tick++;
+      if (screenShake > 0) screenShake *= 0.85;
+      if (dropCooldown > 0) dropCooldown--;
+      if (gameOver) return;
+
+      if (store.autoDrop && dropCooldown <= 0 && tick % 28 === 0) {
+        const autoX = boxLeft + 35 + Math.random() * (boxRight - boxLeft - 70);
+        dropPetAt(autoX);
+      }
+
+      const gravity = 0.38;
+      const bounce = Number(store.bounciness) || 0.35;
+      const friction = 0.985;
+      const chaosPushX = store.difficulty === 'CHAOS' ? Math.sin(tick * 0.035) * 0.14 : 0;
+
+      for (const b of balls) {
+        b.vy += gravity;
+        b.vx += chaosPushX;
+        b.vx *= friction;
+        b.vy *= friction;
+        b.x += b.vx;
+        b.y += b.vy;
+        b.angle += b.vx * 0.025;
+        b.scalePop += (1.0 - b.scalePop) * 0.22;
+        if (b.expressionTimer > 0) b.expressionTimer--;
+
+        if (b.x - b.r < boxLeft) {
+          b.x = boxLeft + b.r;
+          b.vx = Math.abs(b.vx) * bounce;
+        } else if (b.x + b.r > boxRight) {
+          b.x = boxRight - b.r;
+          b.vx = -Math.abs(b.vx) * bounce;
+        }
+
+        if (b.y + b.r > boxBottom) {
+          b.y = boxBottom - b.r;
+          b.vy = -Math.abs(b.vy) * bounce;
+          b.vx *= 0.92;
+        }
+      }
+
+      const toMerge = [];
+      const levels = getLevels();
+
+      for (let iter = 0; iter < 4; iter++) {
+        for (let i = 0; i < balls.length; i++) {
+          for (let j = i + 1; j < balls.length; j++) {
+            const a = balls[i];
+            const b = balls[j];
+            if (a.mergedFlag || b.mergedFlag) continue;
+
+            const dx = b.x - a.x;
+            const dy = b.y - a.y;
+            const dist = Math.hypot(dx, dy);
+            const minDist = a.r + b.r;
+
+            if (dist < minDist && dist > 0.0001) {
+              const isRainbowPair =
+                (a.specialKind === 'rainbow' && b.specialKind === 'normal') ||
+                (b.specialKind === 'rainbow' && a.specialKind === 'normal');
+
+              const isSameNormalPair =
+                a.specialKind === 'normal' &&
+                b.specialKind === 'normal' &&
+                a.level === b.level &&
+                a.level < levels.length - 1;
+
+              if (isRainbowPair || isSameNormalPair) {
+                a.mergedFlag = true;
+                b.mergedFlag = true;
+                const baseLv = a.specialKind === 'rainbow' ? b.level : a.level;
+                toMerge.push({
+                  x: (a.x + b.x) / 2,
+                  y: (a.y + b.y) / 2,
+                  nextLevel: Math.min(levels.length - 1, baseLv + 1)
+                });
+                continue;
+              }
+
+              const overlap = (minDist - dist) * 0.52;
+              const nx = dx / dist;
+              const ny = dy / dist;
+              const totalMass = a.r + b.r;
+              const ratioA = b.r / totalMass;
+              const ratioB = a.r / totalMass;
+
+              a.x -= nx * overlap * ratioA * 2;
+              a.y -= ny * overlap * ratioA * 2;
+              b.x += nx * overlap * ratioB * 2;
+              b.y += ny * overlap * ratioB * 2;
+
+              if (iter === 0) {
+                const rvx = b.vx - a.vx;
+                const rvy = b.vy - a.vy;
+                const velAlongNormal = rvx * nx + rvy * ny;
+                if (velAlongNormal < 0) {
+                  const impulse = -(1 + bounce * 0.6) * velAlongNormal * 0.5;
+                  a.vx -= impulse * nx * ratioA;
+                  a.vy -= impulse * ny * ratioA;
+                  b.vx += impulse * nx * ratioB;
+                  b.vy += impulse * ny * ratioB;
+                }
+              }
+
+              a.x = Math.max(boxLeft + a.r, Math.min(boxRight - a.r, a.x));
+              a.y = Math.min(boxBottom - a.r, a.y);
+              b.x = Math.max(boxLeft + b.r, Math.min(boxRight - b.r, b.x));
+              b.y = Math.min(boxBottom - b.r, b.y);
+            }
+          }
+        }
+      }
+
+      if (toMerge.length > 0) {
+        balls = balls.filter(b => !b.mergedFlag);
+
+        for (const m of toMerge) {
+          const info = levels[m.nextLevel];
+          score += info.pts;
+          highScore = Math.max(highScore, score);
+
+          const diffMult = store.difficulty === 'CHAOS' ? 3 : (store.difficulty === 'HARD' ? 2 : 1);
+          const greedMult = 1 + (store.greedLevel - 1) * 0.35;
+          const earnedCoins = Math.max(1, Math.round((m.nextLevel + 1) * 2 * diffMult * greedMult));
+          store.coins += earnedCoins;
+
+          sfx.merge(m.nextLevel);
+          spawnBall(m.x, m.y, m.nextLevel, true, 'normal');
+          spawnParticles(m.x, m.y, info.color, 14, info.emoji);
+          spawnPopup(m.x, m.y - 22, `${info.emoji} +${earnedCoins} 🪙`, '#F59E0B', 1.18);
+
+          for (let k = balls.length - 1; k >= 0; k--) {
+            if (balls[k].specialKind === 'stone' && Math.hypot(balls[k].x - m.x, balls[k].y - m.y) < 110) {
+              spawnParticles(balls[k].x, balls[k].y, '#94A3B8', 12, '💥');
+              spawnPopup(balls[k].x, balls[k].y, '💥 VỠ ĐÁ! +15 🪙', '#38BDF8', 1.1);
+              store.coins += 15;
+              balls.splice(k, 1);
+            }
+          }
+        }
+        saveGameData();
+      }
+
+      let anyOver = false;
+      for (const b of balls) {
+        if (b.y - b.r < boxTop + 8 && Math.abs(b.vy) < 0.8 && b.expressionTimer <= 0) {
+          anyOver = true;
+          break;
+        }
+      }
+
+      if (anyOver) {
+        overLineTimer++;
+        if (overLineTimer > 130) {
+          if (store.difficulty === 'BABY') {
+            overLineTimer = 0;
+            sfx.fanfare();
+            balls.sort((a, b) => a.y - b.y);
+            const removed = balls.splice(0, Math.min(4, balls.length));
+            for (const rm of removed) {
+              spawnParticles(rm.x, rm.y, '#F43F5E', 10, '🎉');
+            }
+            store.coins += 10;
+            saveGameData();
+            spawnPopup((boxLeft + boxRight) / 2, boxTop + 50, '🍼 BÉ TẬP CHƠI: TỰ DỌN HỘP +10 🪙!', '#10B981', 1.2);
+          } else {
+            gameOver = true;
+            sfx.fanfare();
+          }
+        }
+      } else {
+        overLineTimer = Math.max(0, overLineTimer - 2);
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.18;
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+
+      for (let i = popups.length - 1; i >= 0; i--) {
+        const pp = popups[i];
+        pp.y += pp.vy;
+        pp.life--;
+        if (pp.life <= 0) popups.splice(i, 1);
+      }
+    }
+
+    function spawnPopup(x, y, text, color = '#EA580C', scale = 1) {
+      popups.push({ x, y, vy: -1.6, text, color, scale, life: 48 });
+    }
+
+    function spawnParticles(x, y, color, count = 12, emoji = null) {
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const s = 2 + Math.random() * 5;
+        particles.push({
+          x, y,
+          vx: Math.cos(a) * s,
+          vy: Math.sin(a) * s - 1.5,
+          r: 4 + Math.random() * 5,
+          color,
+          emoji: i < 2 ? emoji : null,
+          life: 24 + Math.floor(Math.random() * 14)
+        });
+      }
+    }
+
+    function drawPetFace(b, info) {
+      const r = b.r;
+
+      if (b.specialKind === 'stone') {
+        ctx.fillStyle = '#94A3B8';
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.font = '24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🪨', 0, 2);
+        return;
+      }
+
+      if (b.specialKind === 'rainbow') {
+        const hue = (tick * 8) % 360;
+        ctx.fillStyle = `hsl(${hue}, 90%, 75%)`;
+        ctx.strokeStyle = `hsl(${(hue + 120) % 360}, 85%, 45%)`;
+        ctx.lineWidth = 3.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        ctx.font = '24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🌈', 0, 2);
+        return;
+      }
+
+      ctx.fillStyle = info.color;
+      ctx.strokeStyle = info.border;
+      ctx.lineWidth = Math.max(2.5, r * 0.08);
+      ctx.beginPath();
+      ctx.arc(0, 0, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.beginPath();
+      ctx.ellipse(0, r * 0.28, r * 0.62, r * 0.45, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = 'rgba(244, 63, 94, 0.45)';
+      ctx.beginPath();
+      ctx.arc(-r * 0.48, r * 0.06, r * 0.16, 0, Math.PI * 2);
+      ctx.arc(r * 0.48, r * 0.06, r * 0.16, 0, Math.PI * 2);
+      ctx.fill();
+
+      const eyeY = -r * 0.16;
+      const eyeX = r * 0.28;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.strokeStyle = '#0F172A';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(-eyeX, eyeY, r * 0.22, 0, Math.PI * 2);
+      ctx.arc(eyeX, eyeY, r * 0.26, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#0F172A';
+      const pupOff = r * 0.08;
+      ctx.beginPath();
+      ctx.arc(-eyeX + Math.cos(b.angle * 3) * pupOff, eyeY + Math.sin(b.angle * 3) * pupOff, r * 0.09, 0, Math.PI * 2);
+      ctx.arc(eyeX - Math.cos(b.angle * 3) * pupOff, eyeY - Math.sin(b.angle * 3) * pupOff, r * 0.11, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (b.expressionTimer > 0 || Math.abs(b.vy) > 3.5) {
+        ctx.fillStyle = '#991B1B';
+        ctx.beginPath();
+        ctx.arc(0, r * 0.18, r * 0.2, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillStyle = '#FB7185';
+        ctx.beginPath();
+        ctx.ellipse(r * 0.12, r * 0.26, r * 0.12, r * 0.18, 0.25, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = info.border;
+        ctx.beginPath();
+        ctx.ellipse(0, r * 0.14, r * 0.24, r * 0.11, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.font = `${Math.max(12, Math.round(r * 0.55))}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(info.emoji, 0, -r * 0.65);
+    }
+
+    function render() {
+      const levels = getLevels();
+      ctx.save();
+      if (screenShake > 0.5) {
+        ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+      }
+
+      const grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, '#FEF9C3');
+      grad.addColorStop(1, '#FCE7F3');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
+
+      if (boxLeft > 105) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.88)';
+        ctx.strokeStyle = '#F59E0B';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.roundRect(10, boxTop, boxLeft - 20, 155, 14);
+        ctx.fill();
+        ctx.stroke();
+
+        const leftCenter = 10 + (boxLeft - 20) / 2;
+        ctx.fillStyle = '#0F172A';
+        ctx.font = 'extrabold 13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('🏆 ĐIỂM SỐ', leftCenter, boxTop + 24);
+        ctx.fillStyle = '#EA580C';
+        ctx.font = 'extrabold 22px sans-serif';
+        ctx.fillText(`${score}`, leftCenter, boxTop + 52);
+        ctx.fillStyle = '#64748B';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillText(`Kỷ lục: ${highScore}`, leftCenter, boxTop + 72);
+
+        const nextInfo = levels[nextDropLevel];
+        ctx.fillStyle = '#0F172A';
+        ctx.font = 'bold 11px sans-serif';
+        ctx.fillText(`Sắp tới: ${nextInfo.emoji} ${nextInfo.name}`, leftCenter, boxTop + 106);
+
+        ctx.fillStyle = '#D97706';
+        ctx.fillText(`Bùa Xu: +${(store.greedLevel - 1) * 35}%`, leftCenter, boxTop + 132);
+      }
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.76)';
+      ctx.fillRect(boxLeft, boxTop, boxRight - boxLeft, boxBottom - boxTop);
+
+      ctx.strokeStyle = overLineTimer > 0 ? '#EF4444' : 'rgba(239, 68, 68, 0.35)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath();
+      ctx.moveTo(boxLeft, boxTop + 10);
+      ctx.lineTo(boxRight, boxTop + 10);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      ctx.strokeStyle = '#F59E0B';
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(boxLeft, boxTop);
+      ctx.lineTo(boxLeft, boxBottom);
+      ctx.lineTo(boxRight, boxBottom);
+      ctx.lineTo(boxRight, boxTop);
+      ctx.stroke();
+
+      if (!gameOver && dropCooldown <= 0) {
+        const curInfo = levels[currentDropLevel];
+        ctx.strokeStyle = 'rgba(245, 158, 11, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 6]);
+        ctx.beginPath();
+        ctx.moveTo(dropX, boxTop - 16);
+        ctx.lineTo(dropX, boxBottom);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.save();
+        ctx.translate(dropX, boxTop - 22);
+        drawPetFace(
+          { r: nextIsRainbow ? 26 : curInfo.r, angle: 0, vy: 0, expressionTimer: 0, specialKind: nextIsRainbow ? 'rainbow' : 'normal' },
+          curInfo
+        );
+        ctx.restore();
+      }
+
+      for (const b of balls) {
+        const info = levels[Math.min(b.level, levels.length - 1)];
+        ctx.save();
+        ctx.translate(b.x, b.y);
+        ctx.rotate(b.angle);
+        ctx.scale(b.scalePop, 2 - b.scalePop);
+        drawPetFace(b, info);
+        ctx.restore();
+      }
+
+      const barY = H - 22;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.84)';
+      ctx.beginPath();
+      ctx.roundRect(boxLeft - 14, H - 39, (boxRight - boxLeft) + 28, 32, 12);
+      ctx.fill();
+
+      const totalLevels = levels.length;
+      const stepW = ((boxRight - boxLeft) + 12) / totalLevels;
+      for (let i = 0; i < totalLevels; i++) {
+        const lv = levels[i];
+        const lx = (boxLeft - 6) + i * stepW + stepW / 2;
+        ctx.font = i <= maxUnlockedLevel ? '17px sans-serif' : '13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.globalAlpha = i <= maxUnlockedLevel ? 1.0 : 0.35;
+        ctx.fillText(lv.emoji, lx, barY);
+      }
+      ctx.globalAlpha = 1.0;
+
+      for (const p of particles) {
+        if (p.emoji) {
+          ctx.font = '18px sans-serif';
+          ctx.fillText(p.emoji, p.x, p.y);
+        } else {
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r * (p.life / 30), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      for (const pp of popups) {
+        ctx.save();
+        ctx.font = `extrabold ${Math.round(14 * pp.scale)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.fillStyle = pp.color;
+        ctx.strokeText(pp.text, pp.x, pp.y);
+        ctx.fillText(pp.text, pp.x, pp.y);
+        ctx.restore();
+      }
+
+      if (gameOver) {
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.86)';
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.textAlign = 'center';
+        ctx.font = 'extrabold 24px sans-serif';
+        ctx.fillText('🎉 HỘP ĐẦY ẮP THÚ BÉO RỒI! 🎉', W / 2, H / 2 - 70);
+
+        ctx.fillStyle = '#FACC15';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.fillText(`Điểm: ${score}  |  Ví Xu: ${store.coins} 🪙`, W / 2, H / 2 - 34);
+
+        // Nút Xem Quảng Cáo Cứu Nguy (Nổ 5 quả bóng trên cùng để chơi tiếp!)
+        ctx.fillStyle = '#10B981';
+        ctx.beginPath();
+        ctx.roundRect(W / 2 - 145, H / 2 - 12, 290, 42, 12);
+        ctx.fill();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'extrabold 14px sans-serif';
+        ctx.fillText(store.noAds ? '🎁 CỨU NGUY MIỄN PHÍ (NỔ 5 BÓNG)' : '🎬 XEM QC: NỔ 5 BÓNG CHƠI TIẾP!', W / 2, H / 2 + 14);
+
+        // Nút Chơi Ván Mới
+        ctx.fillStyle = '#F59E0B';
+        ctx.beginPath();
+        ctx.roundRect(W / 2 - 145, H / 2 + 42, 290, 42, 12);
+        ctx.fill();
+        ctx.fillStyle = '#0F172A';
+        ctx.font = 'extrabold 15px sans-serif';
+        ctx.fillText('🔄 CHƠI VÁN MỚI NGAY', W / 2, H / 2 + 68);
+      }
+
+      ctx.restore();
+    }
+
+    function loop() {
+      update();
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    // =====================================================
+    // HỆ THỐNG QUẢNG CÁO ADMOB & MUA HÀNG GOOGLE PLAY (IAP)
+    // =====================================================
+    // Mã AdMob (Đang để chế độ Test an toàn của Google để không bị khóa tài khoản khi test;
+    // Khi lên Google Play chính thức chỉ cần thay bằng mã đơn vị quảng cáo AdMob thật của bạn)
+    const AD_IDS = {
+      interstitial: 'ca-app-pub-3940256099942544/1033173712',
+      rewarded: 'ca-app-pub-3940256099942544/5224354917'
+    };
+    const AD_TESTING = true;
+    const AdMob = window.Capacitor?.isNativePlatform?.() ? window.Capacitor.Plugins.AdMob : null;
+    let gamesPlayedSinceAd = 0;
+
+    async function adsInit() {
+      if (!AdMob) return;
+      try {
+        await AdMob.initialize({ initializeForTesting: AD_TESTING });
+        AdMob.prepareInterstitial({ adId: AD_IDS.interstitial, isTesting: AD_TESTING }).catch(() => {});
+        AdMob.prepareRewardVideoAd({ adId: AD_IDS.rewarded, isTesting: AD_TESTING }).catch(() => {});
+      } catch (e) {}
+    }
+
+    async function maybeShowInterstitial() {
+      gamesPlayedSinceAd++;
+      if (store.noAds || !AdMob || gamesPlayedSinceAd < 2) return;
+      gamesPlayedSinceAd = 0;
+      try {
+        await AdMob.showInterstitial();
+      } catch (e) {}
+      AdMob.prepareInterstitial({ adId: AD_IDS.interstitial, isTesting: AD_TESTING }).catch(() => {});
+    }
+
+    async function showRewardedVideo() {
+      if (store.noAds) return true;
+      if (!AdMob) {
+        return confirm('🎬 [Chế độ Thử Nghiệm] Xem xong Video Quảng Cáo để nhận thưởng?');
+      }
+      let rewarded = false;
+      try {
+        rewarded = !!(await AdMob.showRewardVideoAd());
+      } catch (e) {
+        const toast = document.getElementById('shopToast');
+        if (toast) toast.textContent = '⏳ Quảng cáo đang tải, vui lòng thử lại sau vài giây!';
+      }
+      AdMob.prepareRewardVideoAd({ adId: AD_IDS.rewarded, isTesting: AD_TESTING }).catch(() => {});
+      return rewarded;
+    }
+
+    window.watchRewardedAdForCoins = async function() {
+      const ok = await showRewardedVideo();
+      if (ok) {
+        store.coins += 150;
+        store.shakes += 1;
+        saveGameData();
+        sfx.fanfare();
+        const toast = document.getElementById('shopToast');
+        if (toast) {
+          toast.textContent = '🎉 Đã nhận thưởng Quảng Cáo: +150 🪙 Xu Vàng & +1 Lắc Hộp!';
+          toast.className = 'mt-3 text-center font-bold text-xs text-emerald-400 h-4';
+        }
+      }
+    };
+
+    // Danh sách Gói Mua Hàng Trong Ứng Dụng (Google Play In-App Billing)
+    const IAP_PRODUCTS = [
+      {
+        id: 'remove_ads',
+        type: 'non-consumable',
+        name: 'Tắt Hẳn Quảng Cáo Vĩnh Viễn',
+        fallbackPrice: '49.000đ',
+        grant: () => { store.noAds = true; }
+      },
+      {
+        id: 'coins_1000',
+        type: 'consumable',
+        name: 'Túi 1.000 Xu Vàng',
+        fallbackPrice: '22.000đ',
+        grant: () => { store.coins += 1000; }
+      },
+      {
+        id: 'starter_pack',
+        type: 'non-consumable',
+        name: 'Rương Đại Gia VIP',
+        fallbackPrice: '79.000đ',
+        grant: () => {
+          store.noAds = true;
+          store.coins += 5000;
+          store.rainbows += 5;
+          store.bombs += 5;
+        }
+      }
+    ];
+
+    window.IAP = {
+      storeObj: null,
+      init() {
+        const C = window.CdvPurchase;
+        if (!C) return;
+        const st = (this.storeObj = C.store);
+        st.register(
+          IAP_PRODUCTS.map(p => ({
+            id: p.id,
+            platform: C.Platform.GOOGLE_PLAY,
+            type: p.type === 'consumable' ? C.ProductType.CONSUMABLE : C.ProductType.NON_CONSUMABLE
+          }))
+        );
+        st.when()
+          .approved(tx => tx.verify())
+          .verified(rc => rc.finish())
+          .finished(tx => tx.products.forEach(p => window.IAP.deliver(p.id)))
+          .productUpdated(() => updateUI());
+        st.initialize([C.Platform.GOOGLE_PLAY]).catch(() => {});
+      },
+      deliver(id) {
+        const p = IAP_PRODUCTS.find(x => x.id === id);
+        if (!p) return;
+        if (p.type === 'non-consumable') {
+          if (store['owned_' + id]) return;
+          store['owned_' + id] = true;
+        }
+        p.grant();
+        saveGameData();
+        sfx.fanfare();
+        const toast = document.getElementById('shopToast');
+        if (toast) toast.textContent = '💎 Thanh toán thành công: ' + p.name + '!';
+      },
+      buy(id) {
+        if (!this.storeObj) {
+          const p = IAP_PRODUCTS.find(x => x.id === id);
+          if (confirm(`💎 [Chế độ Thử Nghiệm] Giả lập mua gói "${p?.name}" (${p?.fallbackPrice}) trên Google Play?`)) {
+            this.deliver(id);
+          }
+          return;
+        }
+        const offer = this.storeObj.get(id)?.getOffer();
+        if (!offer) {
+          const toast = document.getElementById('shopToast');
+          if (toast) toast.textContent = '⏳ Gói nạp đang kết nối Google Play, thử lại sau giây lát!';
+          return;
+        }
+        offer.order();
+      },
+      restore() {
+        if (this.storeObj) this.storeObj.restorePurchases();
+        const toast = document.getElementById('shopToast');
+        if (toast) toast.textContent = '🔄 Đang khôi phục các gói đã mua từ Google Play...';
+      }
+    };
+
+    document.addEventListener('deviceready', () => window.IAP.init(), false);
+    adsInit();
+
+    function updateUI() {
+      document.getElementById('coinDisplay').textContent = store.coins;
+      document.getElementById('shopCoinDisplay').textContent = store.coins;
+      document.getElementById('shakeCount').textContent = store.shakes;
+      document.getElementById('wandCount').textContent = store.wands;
+      document.getElementById('bombCount').textContent = store.bombs;
+      document.getElementById('rainbowCount').textContent = store.rainbows;
+
+      document.getElementById('boxLvLabel').textContent = `Cấp ${store.boxLevel}/4`;
+      document.getElementById('greedLvLabel').textContent = `Cấp ${store.greedLevel}/5`;
+
+      const diffNames = {
+        BABY: '🍼 Bé Tập Chơi',
+        NORMAL: '🐥 Bình Thường',
+        HARD: '🌶️ Thách Đấu (x2 Xu)',
+        CHAOS: '🌪️ Hỗn Loạn (x3 Xu)'
+      };
+      document.getElementById('badgeDifficulty').textContent = diffNames[store.difficulty] || '🐥 Bình Thường';
+
+      ['BABY', 'NORMAL', 'HARD', 'CHAOS'].forEach(d => {
+        const el = document.getElementById('diff_' + d);
+        if (el) {
+          el.className = store.difficulty === d
+            ? 'p-2.5 rounded-xl border-2 border-amber-400 bg-amber-400/15 text-left transition'
+            : 'p-2.5 rounded-xl border border-slate-700 bg-slate-800 text-left transition';
+        }
+      });
+
+      document.getElementById('selTheme').value = store.theme;
+      document.getElementById('selBounce').value = String(store.bounciness);
+      document.getElementById('chkAutoDrop').checked = !!store.autoDrop;
+    }
+
+    window.buyItem = function(type, cost) {
+      const toast = document.getElementById('shopToast');
+      if (store.coins < cost) {
+        toast.textContent = '❌ Chưa đủ Xu Vàng rồi! Hãy ghép thêm thú để kiếm Xu nhé!';
+        toast.className = 'mt-3 text-center font-bold text-xs text-rose-400 h-4';
+        return;
+      }
+
+      if (type === 'boxSize' && store.boxLevel >= 4) {
+        toast.textContent = '✅ Hộp Kẹo đã mở rộng tối đa (Cấp 4/4)!';
+        return;
+      }
+      if (type === 'coinBoost' && store.greedLevel >= 5) {
+        toast.textContent = '✅ Bùa Thần Tài đã đạt cấp tối đa (Cấp 5/5)!';
+        return;
+      }
+
+      store.coins -= cost;
+      sfx.fanfare();
+
+      if (type === 'shake') store.shakes += 2;
+      if (type === 'wand') store.wands += 2;
+      if (type === 'bomb') store.bombs += 2;
+      if (type === 'rainbow') store.rainbows += 2;
+      if (type === 'boxSize') {
+        store.boxLevel++;
+        updateBoxBounds();
+      }
+      if (type === 'coinBoost') {
+        store.greedLevel++;
+      }
+
+      saveGameData();
+      toast.textContent = '🎉 Mua thành công! Đã cộng vào túi đồ của bạn!';
+      toast.className = 'mt-3 text-center font-bold text-xs text-emerald-400 h-4';
+    };
+
+    window.setDifficulty = function(diff) {
+      store.difficulty = diff;
+      updateBoxBounds();
+      saveGameData();
+      sfx.fanfare();
+      spawnPopup((boxLeft + boxRight) / 2, (boxTop + boxBottom) / 2, `⚙️ Đổi độ khó: ${diff}!`, '#0284C7', 1.2);
+    };
+
+    document.getElementById('btnShake').addEventListener('click', () => {
+      if (store.shakes <= 0) {
+        document.getElementById('shopModal').classList.remove('hidden');
+        return;
+      }
+      store.shakes--;
+      saveGameData();
+      screenShake = 18;
+      sfx.fanfare();
+      for (const b of balls) {
+        b.vy = -6 - Math.random() * 6;
+        b.vx = (Math.random() - 0.5) * 11;
+      }
+      spawnPopup((boxLeft + boxRight) / 2, (boxTop + boxBottom) / 2, '🫨 LẮC TUNG BỤNG MỠ!', '#F59E0B', 1.25);
+    });
+
+    document.getElementById('btnWand').addEventListener('click', () => {
+      if (store.wands <= 0) {
+        document.getElementById('shopModal').classList.remove('hidden');
+        return;
+      }
+      store.wands--;
+      saveGameData();
+      sfx.fanfare();
+      const levels = getLevels();
+      let minLv = 99;
+      for (const b of balls) if (b.specialKind === 'normal' && b.level < minLv) minLv = b.level;
+      for (const b of balls) {
+        if (b.specialKind === 'normal' && b.level === minLv && b.level < levels.length - 1) {
+          b.level++;
+          b.r = levels[b.level].r;
+          b.scalePop = 1.4;
+          spawnParticles(b.x, b.y, '#EC4899', 10, '✨');
+        }
+      }
+      spawnPopup((boxLeft + boxRight) / 2, (boxTop + boxBottom) / 2, '✨ ĐŨA THẦN HÔ BIẾN LỚN LÊN!', '#EC4899', 1.25);
+    });
+
+    document.getElementById('btnBomb').addEventListener('click', () => {
+      if (store.bombs <= 0) {
+        document.getElementById('shopModal').classList.remove('hidden');
+        return;
+      }
+      if (balls.length === 0) return;
+      store.bombs--;
+      saveGameData();
+      sfx.fanfare();
+      screenShake = 14;
+      balls.sort((a, b) => (a.specialKind === 'stone' ? -999 : a.y) - (b.specialKind === 'stone' ? -999 : b.y));
+      const popped = balls.splice(0, Math.min(3, balls.length));
+      for (const p of popped) {
+        spawnParticles(p.x, p.y, '#EF4444', 14, '💥');
+      }
+      spawnPopup((boxLeft + boxRight) / 2, (boxTop + boxBottom) / 2, '💣 BOM NỔ DỌN HỘP!', '#EF4444', 1.25);
+    });
+
+    document.getElementById('btnRainbow').addEventListener('click', () => {
+      if (store.rainbows <= 0) {
+        document.getElementById('shopModal').classList.remove('hidden');
+        return;
+      }
+      store.rainbows--;
+      nextIsRainbow = true;
+      saveGameData();
+      sfx.fanfare();
+      spawnPopup((boxLeft + boxRight) / 2, boxTop + 40, '🌈 LƯỢT THẢ TIẾP THEO LÀ CẦU VỒNG VẠN NĂNG!', '#6366F1', 1.2);
+    });
+
+    document.getElementById('btnOpenShop').addEventListener('click', () => {
+      updateUI();
+      document.getElementById('shopModal').classList.remove('hidden');
+    });
+    document.getElementById('btnCloseShop').addEventListener('click', () => {
+      document.getElementById('shopModal').classList.add('hidden');
+    });
+
+    document.getElementById('btnOpenSettings').addEventListener('click', () => {
+      updateUI();
+      document.getElementById('settingsModal').classList.remove('hidden');
+    });
+    document.getElementById('btnCloseSettings').addEventListener('click', () => {
+      document.getElementById('settingsModal').classList.add('hidden');
+    });
+
+    document.getElementById('selTheme').addEventListener('change', (e) => {
+      store.theme = e.target.value;
+      saveGameData();
+    });
+    document.getElementById('selBounce').addEventListener('change', (e) => {
+      store.bounciness = Number(e.target.value);
+      saveGameData();
+    });
+    document.getElementById('chkAutoDrop').addEventListener('change', (e) => {
+      store.autoDrop = e.target.checked;
+      saveGameData();
+    });
+    document.getElementById('btnToggleSoundModal').addEventListener('click', () => {
+      sfx.enabled = !sfx.enabled;
+      document.getElementById('btnToggleSoundModal').textContent = sfx.enabled ? '🔊 Bật' : '🔇 Tắt';
+    });
+    document.getElementById('btnRestartModal').addEventListener('click', () => {
+      document.getElementById('settingsModal').classList.add('hidden');
+      initGame();
+    });
+
+    initGame();
+    loop();
+  </script>
+
+<!-- Floating Monetization Bar injected by MoneyHunter247 -->
+<div style="position:fixed;bottom:12px;right:12px;z-index:999999;background:rgba(15,23,42,0.95);border:1px solid #10b981;border-radius:12px;padding:8px 14px;display:flex;align-items:center;gap:10px;font-family:system-ui,sans-serif;box-shadow:0 8px 25px rgba(0,0,0,0.5);">
+  <span style="color:#f8fafc;font-size:13px;font-weight:600;">⚡ Want this full source code?</span>
+  <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=xaductrung%40gmail.com&item_name=Commercial+Source+Code+License&amount=49&currency_code=USD&return=https%3A%2F%2Ffiles.catbox.moe%2Fytghdr.zip" target="_blank" style="background:#ffc439;color:#111827;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">💳 Buy Source ($49 PayPal)</a>
+  <a href="https://xaductrung-rgb.github.io" target="_blank" style="background:#10b981;color:#022c22;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">🛒 All Bundles</a>
+</div>
+</body>
+</html>

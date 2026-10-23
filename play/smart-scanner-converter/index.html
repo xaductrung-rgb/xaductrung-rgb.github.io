@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#064e3b" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>A4 CleanScan Pro - Quét Lọc Nét Thừa & Dựng Khung A4 Tinh Khiết (Không Quảng Cáo)</title>
+  <script src="./tailwindcss.min.js"></script>
+  <style>
+    :root {
+      --bg-main: #0f172a;
+      --bg-card: #1e293b;
+      --bg-panel: #0f172a;
+      --border-col: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --emerald: #10b981;
+    }
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      margin: 0;
+      padding: 8px;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+    }
+    /* Offline fallback layout utilities for Android WebView without internet */
+    .app-shell {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--bg-card);
+      border: 2px solid var(--border-col);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+    }
+    .desk-bg {
+      background-color: #090d16;
+      background-image: radial-gradient(#1e293b 1px, transparent 1px);
+      background-size: 16px 16px;
+    }
+    .a4-shadow {
+      box-shadow: 0 12px 32px -4px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.2);
+    }
+    .hidden {
+      display: none !important;
+    }
+    button, label, select, input, textarea {
+      font-family: inherit;
+    }
+    @keyframes scanline {
+      0% { top: 3%; opacity: 0.95; }
+      50% { top: 94%; opacity: 1; }
+      100% { top: 3%; opacity: 0.95; }
+    }
+    .scan-laser {
+      position: absolute;
+      left: 3%;
+      right: 3%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, #10b981, #6ee7b7, #10b981, transparent);
+      box-shadow: 0 0 16px 4px rgba(16, 185, 129, 0.85);
+      animation: scanline 1.6s ease-in-out infinite;
+      pointer-events: none;
+    }
+    @media print {
+      body * { visibility: hidden; }
+      #a4Canvas, #a4Canvas * { visibility: visible; }
+      #a4Canvas {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 210mm !important;
+        height: 297mm !important;
+        max-height: none !important;
+        box-shadow: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="antialiased">
+  <div class="app-shell">
+    <!-- Top Header -->
+    <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-3 bg-gradient-to-r from-slate-950 via-emerald-950 to-slate-900 text-white border-b border-slate-700">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-xl">
+          📄
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="font-extrabold text-sm sm:text-base tracking-tight text-white m-0">
+              A4 CLEANSCAN STUDIO
+            </h1>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-400 text-slate-950">
+              100% KHÔNG QUẢNG CÁO • OFFLINE
+            </span>
+          </div>
+          <p class="text-[11px] text-slate-300 m-0">
+            Quét xóa nét thừa, bóng đen, dòng kẻ ➔ Dựng khung A4 trắng tinh chỉ giữ chữ & ký tự
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <button id="btnCompareHold" class="px-3 py-1.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs shadow cursor-pointer select-none border-0">
+          👁️ Giữ Để Xem Ảnh Gốc
+        </button>
+        <button id="btnPrintNative" class="px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold text-xs shadow cursor-pointer border-0">
+          🖨️ In / Lưu PDF Trực Tiếp
+        </button>
+        <a href="./A4CleanScanPro.apk" download="A4CleanScanPro.apk" class="px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow cursor-pointer no-underline flex items-center gap-1">
+          🤖 Tải File Cài Android (.APK)
+        </a>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="grid grid-cols-3 gap-1.5 p-2 bg-slate-900 border-b border-slate-700">
+      <button data-tab="scanner" class="tab-btn flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 text-white shadow cursor-pointer transition border-0">
+        <span>🧹</span> 1. Quét Lọc Nét Thừa & Khung A4
+      </button>
+      <button data-tab="typeset" class="tab-btn flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs sm:text-sm bg-slate-800 text-slate-200 hover:opacity-90 cursor-pointer transition border-0">
+        <span>⌨️</span> 2. Dựng Chữ Đánh Máy Lên A4
+      </button>
+      <button data-tab="converter" class="tab-btn flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs sm:text-sm bg-slate-800 text-slate-200 hover:opacity-90 cursor-pointer transition border-0">
+        <span>🔄</span> 3. Đổi Đuôi Ảnh & Đơn Vị
+      </button>
+    </div>
+
+    <!-- ==================== TAB 1: PURE A4 INK & CHARACTER EXTRACTOR ==================== -->
+    <div id="tab-scanner" class="tab-panel p-3 sm:p-4 space-y-3">
+      <!-- Top Bar: Upload + Camera + Messy Samples + Tools -->
+      <div class="flex flex-wrap items-center justify-between gap-2 bg-slate-900/90 p-2.5 rounded-xl border border-slate-700">
+        <div class="flex flex-wrap items-center gap-1.5">
+          <label class="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs cursor-pointer shadow flex items-center gap-1.5 transition">
+            <span>📷 Chụp / Chọn Ảnh Cần Quét</span>
+            <input id="scanFileInput" type="file" accept="image/*" class="hidden" />
+          </label>
+          <button id="btnSampleDirtyDoc" class="px-2.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs cursor-pointer transition border-0">
+            🧪 Mẫu 1: Ảnh Bị Bóng Đen & Vết Ố
+          </button>
+          <button id="btnSampleHandwriting" class="px-2.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs cursor-pointer transition border-0">
+            ✍️ Mẫu 2: Giấy Vở Kẻ Ô (Xóa Dòng Kẻ)
+          </button>
+        </div>
+
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <button id="btnEraserTool" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow cursor-pointer transition border-0">
+            🧽 Bật Cục Tẩy Xóa Nét Thừa
+          </button>
+          <button id="btnUndoEraser" class="px-2.5 py-1.5 rounded-xl bg-slate-800 text-slate-200 border border-slate-600 font-bold text-xs hover:opacity-80 cursor-pointer">
+            ↩️ Hoàn Tác
+          </button>
+          <button id="btnRotate90" class="px-2.5 py-1.5 rounded-xl bg-slate-800 text-slate-200 border border-slate-600 font-bold text-xs hover:opacity-80 cursor-pointer">
+            ↺ Xoay 90°
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Grid: A4 Sheet Canvas + Deep Cleaning Controls -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+        <!-- Left 7 Cols: Pure A4 Preview -->
+        <div class="md:col-span-7 flex flex-col items-center">
+          <div class="relative w-full rounded-xl overflow-hidden border-2 border-slate-700 desk-bg flex flex-col items-center justify-center p-3 sm:p-4 min-h-[420px]">
+            <div class="flex items-center justify-between w-full mb-2 px-1 text-[11px] text-slate-300">
+              <span id="previewModeLabel" class="font-bold text-emerald-400">
+                ✨ TRANG A4 ĐÃ TÁCH NỀN & KHỬ NÉT THỪA (Chỉ giữ chữ & ký tự)
+              </span>
+              <span>Chuẩn A4 (794×1123 px)</span>
+            </div>
+
+            <div class="relative flex items-center justify-center">
+              <canvas id="a4Canvas" width="794" height="1123" class="max-w-full max-h-[410px] bg-white a4-shadow rounded-sm cursor-crosshair"></canvas>
+              <div id="scanLaser" class="scan-laser hidden"></div>
+            </div>
+
+            <div id="eraserHint" class="hidden mt-2 px-3 py-1 rounded-full bg-rose-600 text-white font-bold text-xs shadow">
+              🧽 Chế độ Cục Tẩy: Tô chuột hoặc ngón tay lên vết bẩn / nét thừa trên tờ A4 để xóa trắng!
+            </div>
+          </div>
+        </div>
+
+        <!-- Right 5 Cols: Noise / Stroke Removal & A4 Frame Controls -->
+        <div class="md:col-span-5 space-y-3 bg-slate-900/90 p-3.5 rounded-xl border border-slate-700">
+          <div>
+            <label class="block text-xs font-extrabold uppercase tracking-wider text-emerald-400 mb-1.5">
+              🎯 1. Chế Độ Lọc Tách Chữ Lên Khung A4
+            </label>
+            <div class="grid grid-cols-1 gap-1.5">
+              <button data-cleanmode="adaptive_pure" class="clean-mode-btn py-2 px-3 rounded-xl font-bold text-xs bg-emerald-600 text-white shadow cursor-pointer text-left flex items-center justify-between border-0">
+                <span>✨ Tách Chữ Tinh Khiết (Xóa 100% Bóng & Nền)</span>
+                <span class="text-[10px] bg-white/20 px-1.5 py-0.5 rounded">Chuẩn A4</span>
+              </button>
+              <button data-cleanmode="drop_lines" class="clean-mode-btn py-2 px-3 rounded-xl font-bold text-xs bg-slate-800 text-slate-200 border border-slate-700 cursor-pointer text-left flex items-center justify-between">
+                <span>📝 Xóa Dòng Kẻ Vở & Nét Mờ (Chỉ giữ chữ đậm)</span>
+              </button>
+              <button data-cleanmode="crisp_ink" class="clean-mode-btn py-2 px-3 rounded-xl font-bold text-xs bg-slate-800 text-slate-200 border border-slate-700 cursor-pointer text-left flex items-center justify-between">
+                <span>🖋️ Làm Đậm Nét Chữ In (Tăng sắc nét ký tự)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Precision Sliders -->
+          <div class="space-y-2.5 pt-2 border-t border-slate-700">
+            <div class="text-xs font-extrabold uppercase tracking-wider text-slate-400">
+              🧹 2. Tinh Chỉnh Xóa Nét Thừa & Cắt Viền Bàn
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-semibold mb-0.5">
+                <span>✂️ Cắt Bỏ Viền Bàn Ngoài Rìa Ảnh (Trim Margin)</span>
+                <span id="lblCropEdge" class="text-emerald-400 font-bold">8%</span>
+              </div>
+              <input id="rngCropEdge" type="range" min="0" max="22" value="8" class="w-full accent-emerald-500 cursor-pointer" />
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-semibold mb-0.5">
+                <span>🔥 Lực Tách Nền & Xóa Vết Ố / Dòng Kẻ</span>
+                <span id="lblSensitivity" class="text-emerald-400 font-bold">18</span>
+              </div>
+              <input id="rngSensitivity" type="range" min="5" max="45" value="18" class="w-full accent-emerald-500 cursor-pointer" />
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-semibold mb-0.5">
+                <span>🦠 Tự Động Xóa Đốm Nhiễu Lẻ Tẻ (Despeckle)</span>
+                <span id="lblDespeckle" class="text-emerald-400 font-bold">Mức 2</span>
+              </div>
+              <input id="rngDespeckle" type="range" min="0" max="4" value="2" class="w-full accent-emerald-500 cursor-pointer" />
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-semibold mb-0.5">
+                <span>📏 Căn Lề Trắng Khung Giấy A4 (A4 Padding)</span>
+                <span id="lblA4Margin" class="text-emerald-400 font-bold">48 px</span>
+              </div>
+              <input id="rngA4Margin" type="range" min="16" max="110" value="48" class="w-full accent-emerald-500 cursor-pointer" />
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-semibold mb-0.5">
+                <span>🧽 Cỡ Cọ Cục Tẩy Bằng Tay</span>
+                <span id="lblEraserSize" class="text-rose-400 font-bold">28 px</span>
+              </div>
+              <input id="rngEraserSize" type="range" min="8" max="80" value="28" class="w-full accent-rose-500 cursor-pointer" />
+            </div>
+          </div>
+
+          <!-- Export Pure A4 Buttons -->
+          <div class="pt-2 border-t border-slate-700 space-y-2">
+            <div class="grid grid-cols-2 gap-2">
+              <button id="btnExportA4Pdf" class="py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition border-0">
+                📄 Xuất PDF Chuẩn A4
+              </button>
+              <button id="btnExportA4Png" class="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition border-0">
+                🖼️ Lưu / Chia Sẻ Ảnh A4
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 2: OCR REBUILD PURE TEXT ONTO FRESH A4 ==================== -->
+    <div id="tab-typeset" class="tab-panel hidden p-3 sm:p-4 space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-start">
+        <div class="md:col-span-5 space-y-3 bg-slate-900/90 p-4 rounded-xl border border-slate-700">
+          <h2 class="font-extrabold text-sm flex items-center gap-1.5 m-0">
+            <span>⌨️</span> Trích Xuất Chữ & Dựng Trang A4 Đánh Máy Mới
+          </h2>
+          <p class="text-xs text-slate-400 m-0">
+            Chỉnh sửa nội dung chữ bên dưới để dựng thành <b>1 trang văn bản A4 đánh máy mới tinh 100%</b>.
+          </p>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-bold mb-1">Phông chữ A4:</label>
+              <select id="typeFontSelect" class="w-full p-2 rounded-lg bg-slate-800 text-white border border-slate-600 font-bold text-xs">
+                <option value="Times New Roman, serif">Times New Roman (Chuẩn A4)</option>
+                <option value="Segoe UI, Arial, sans-serif">Arial / Hiện đại</option>
+                <option value="Courier New, monospace">Courier (Máy đánh chữ)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Cỡ chữ (pt):</label>
+              <select id="typeSizeSelect" class="w-full p-2 rounded-lg bg-slate-800 text-white border border-slate-600 font-bold text-xs">
+                <option value="18">Cỡ 13pt (Chuẩn A4)</option>
+                <option value="22" selected>Cỡ 16pt (Rõ nét)</option>
+                <option value="26">Cỡ 19pt (Chữ lớn)</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold mb-1">Nội dung chữ và ký tự trên khung A4:</label>
+            <textarea id="typesetTextarea" rows="9" class="w-full rounded-xl p-2.5 text-xs bg-slate-800 text-white border border-slate-600 font-mono leading-relaxed"></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btnDownloadTypesetPdf" class="py-2.5 px-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-extrabold text-xs shadow cursor-pointer border-0">
+              📄 Xuất PDF A4 Đánh Máy
+            </button>
+            <button id="btnDownloadTypesetPng" class="py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow cursor-pointer border-0">
+              🖼️ Tải Ảnh A4 Đánh Máy
+            </button>
+          </div>
+        </div>
+
+        <div class="md:col-span-7 flex flex-col items-center desk-bg p-4 rounded-xl border-2 border-slate-700">
+          <div class="text-xs font-bold text-emerald-400 mb-2">
+            📄 BẢN XEM TRƯỚC KHUNG GIẤY A4 ĐÁNH MÁY (794 × 1123 px)
+          </div>
+          <canvas id="typesetA4Canvas" width="794" height="1123" class="max-w-full max-h-[420px] bg-white a4-shadow rounded-sm"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB 3: UNIVERSAL FORMAT & UNIT CONVERTER ==================== -->
+    <div id="tab-converter" class="tab-panel hidden p-3 sm:p-4 space-y-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-700 space-y-3">
+          <h2 class="font-extrabold text-sm flex items-center gap-1.5 m-0">
+            <span>🔄</span> Chuyển Đổi Đuôi Trang A4 (PDF / PNG / JPG / WEBP)
+          </h2>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-xs font-bold mb-1">Định dạng xuất:</label>
+              <select id="convFormatSelect" class="w-full p-2 rounded-lg bg-slate-800 text-white border border-slate-600 font-bold text-xs">
+                <option value="application/pdf">PDF (Tài liệu chuẩn A4)</option>
+                <option value="image/png">PNG (Ảnh nét không nén)</option>
+                <option value="image/jpeg">JPG (Ảnh nhẹ gửi Zalo/Mail)</option>
+                <option value="image/webp">WEBP (Chuẩn nén Google)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Mức chất lượng:</label>
+              <select id="convQualitySelect" class="w-full p-2 rounded-lg bg-slate-800 text-white border border-slate-600 font-bold text-xs">
+                <option value="0.95">Siêu Nét (95%)</option>
+                <option value="0.8" selected>Chuẩn Đẹp (80%)</option>
+                <option value="0.5">Siêu Nhẹ (50%)</option>
+              </select>
+            </div>
+          </div>
+          <button id="btnConvertExport" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow cursor-pointer border-0">
+            ⚡ Chuyển Đổi & Lưu Ngay
+          </button>
+        </div>
+
+        <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-700 space-y-3">
+          <h2 class="font-extrabold text-sm flex items-center gap-1.5 m-0">
+            <span>⚖️</span> Chuyển Đổi Khổ Giấy, Đất Đai & Tiền Tệ
+          </h2>
+          <div class="grid grid-cols-2 gap-2">
+            <input id="quickValInput" type="number" value="1" class="p-2 rounded-lg bg-slate-800 text-white border border-slate-600 font-extrabold text-xs" />
+            <select id="quickUnitSelect" class="p-2 rounded-lg bg-slate-800 text-white border border-slate-600 font-bold text-xs">
+              <option value="a4_to_mm">Tờ A4 ➔ Kích thước mm & Pixel</option>
+              <option value="usd_to_vnd">Đô la Mỹ (USD) ➔ VNĐ</option>
+              <option value="gold_to_vnd">Chỉ Vàng 9999 ➔ VNĐ</option>
+              <option value="saobac_to_m2">Sào Bắc Bộ ➔ Mét vuông (m²)</option>
+            </select>
+          </div>
+          <div id="quickUnitOutput" class="p-3 rounded-xl bg-slate-800 border border-slate-700 font-extrabold text-xs text-emerald-400"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastBanner" class="hidden fixed bottom-4 right-4 z-50 px-4 py-2.5 rounded-xl bg-slate-950 text-white font-bold text-xs shadow-2xl border border-emerald-500"></div>
+  </div>
+
+  <script>
+    const A4_W = 794;
+    const A4_H = 1123;
+
+    const rawSourceCanvas = document.createElement('canvas');
+    const rawSourceCtx = rawSourceCanvas.getContext('2d');
+
+    const a4Canvas = document.getElementById('a4Canvas');
+    const a4Ctx = a4Canvas.getContext('2d');
+
+    const typesetCanvas = document.getElementById('typesetA4Canvas');
+    const typesetCtx = typesetCanvas.getContext('2d');
+
+    let cleanMode = 'adaptive_pure';
+    let rotationDeg = 0;
+    let isShowingOriginalHold = false;
+    let isEraserActive = false;
+    let isErasingDrag = false;
+    let eraserStrokes = [];
+
+    function showToast(msg) {
+      const el = document.getElementById('toastBanner');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => el.classList.add('hidden'), 2600);
+    }
+
+    document.getElementById('btnPrintNative').addEventListener('click', () => {
+      window.print();
+    });
+
+    function generateDirtySamplePhoto(type) {
+      rotationDeg = 0;
+      eraserStrokes = [];
+      rawSourceCanvas.width = A4_W;
+      rawSourceCanvas.height = A4_H;
+      const ctx = rawSourceCtx;
+
+      ctx.fillStyle = '#3b2f2f';
+      ctx.fillRect(0, 0, A4_W, A4_H);
+
+      const paperMargin = 46;
+      const grad = ctx.createLinearGradient(0, 0, A4_W, A4_H);
+      grad.addColorStop(0, '#f4efe4');
+      grad.addColorStop(0.5, '#d8d0c0');
+      grad.addColorStop(1, '#9c9484');
+      ctx.fillStyle = grad;
+      ctx.fillRect(paperMargin, paperMargin, A4_W - paperMargin * 2, A4_H - paperMargin * 2);
+
+      ctx.strokeStyle = 'rgba(140, 95, 50, 0.35)';
+      ctx.lineWidth = 10;
+      ctx.beginPath();
+      ctx.arc(580, 260, 72, 0, Math.PI * 2);
+      ctx.stroke();
+
+      ctx.fillStyle = '#334155';
+      for (let i = 0; i < 120; i++) {
+        const rx = 60 + ((i * 73) % (A4_W - 120));
+        const ry = 60 + ((i * 137) % (A4_H - 120));
+        ctx.fillRect(rx, ry, (i % 2) + 1, (i % 2) + 1);
+      }
+
+      if (type === 'dirty_doc') {
+        ctx.fillStyle = '#111827';
+        ctx.font = 'bold 26px serif';
+        ctx.fillText('CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM', 145, 135);
+        ctx.font = 'bold 19px serif';
+        ctx.fillText('Độc lập - Tự do - Hạnh phúc', 275, 168);
+
+        ctx.beginPath();
+        ctx.moveTo(260, 182);
+        ctx.lineTo(530, 182);
+        ctx.strokeStyle = '#111827';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText('ĐƠN XÁC NHẬN & BẢNG KÊ CHI TIẾT', 145, 245);
+
+        const paragraphs = [
+          'Kính gửi: Ban Giám Đốc Công Ty Công Nghệ Số Việt Nam',
+          'Họ và tên người lập biểu: NGUYỄN ĐỨC ANH',
+          'Mã số hồ sơ: HS-2026/A4-CLEAN   |   Ngày lập: 23/10/2026',
+          '',
+          'I. NỘI DUNG VĂN BẢN & KÝ TỰ TRONG TRANG A4:',
+          '1. Toàn bộ viền bàn gỗ đen bên ngoài đã được cắt bỏ hoàn toàn.',
+          '2. Vùng bóng râm tối màu và vết ố cà phê được khử trắng 100%.',
+          '3. Các đốm bụi nhiễu li ti và dòng kẻ mờ được lọc bỏ tự động.',
+          '4. Giữ lại nguyên vẹn chữ viết, con số (0123456789) và ký hiệu.',
+          '',
+          'II. BẢNG SỐ LIỆU KÝ TỰ:',
+          '• Mã đơn hàng #01:  12.500.000 VNĐ   [Đạt chuẩn A4]',
+          '• Mã đơn hàng #02:  34.800.000 VNĐ   [Đã tách nền]',
+          '• Công thức kiểm tra:  E = m × c²  |  ∑(xᵢ + yᵢ) = 100%',
+          '',
+          'Người lập văn bản cam đoan các số liệu và ký tự trên là đúng.'
+        ];
+
+        paragraphs.forEach((line, idx) => {
+          ctx.font = line.startsWith('I.') || line.startsWith('II.') ? 'bold 20px sans-serif' : '19px serif';
+          ctx.fillText(line, 95, 310 + idx * 42);
+        });
+
+        ctx.font = 'bold 19px serif';
+        ctx.fillText('XÁC NHẬN CỦA ĐƠN VỊ', 120, 980);
+        ctx.fillText('NGƯỜI LẬP BIỂU KÝ TÊN', 455, 980);
+
+        document.getElementById('typesetTextarea').value =
+          'CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n----------------------------------\n\nĐƠN XÁC NHẬN & BẢNG KÊ CHI TIẾT\n\nKính gửi: Ban Giám Đốc Công Ty Công Nghệ Số Việt Nam\nHọ và tên người lập biểu: NGUYỄN ĐỨC ANH\nMã số hồ sơ: HS-2026/A4-CLEAN  |  Ngày lập: 23/10/2026\n\nI. NỘI DUNG VĂN BẢN & KÝ TỰ TRONG TRANG A4:\n1. Toàn bộ viền bàn gỗ đen bên ngoài đã được cắt bỏ hoàn toàn.\n2. Vùng bóng râm tối màu và vết ố cà phê được khử trắng 100%.\n3. Các đốm bụi nhiễu li ti và dòng kẻ mờ được lọc bỏ tự động.\n4. Giữ lại nguyên vẹn chữ viết, con số (0123456789) và ký hiệu.\n\nII. BẢNG SỐ LIỆU KÝ TỰ:\n- Mã đơn hàng #01: 12.500.000 VNĐ [Đạt chuẩn A4]\n- Mã đơn hàng #02: 34.800.000 VNĐ [Đã tách nền]\n- Công thức kiểm tra: E = m * c^2 | Sum(x_i + y_i) = 100%';
+      } else {
+        ctx.strokeStyle = 'rgba(100, 140, 200, 0.45)';
+        ctx.lineWidth = 1.5;
+        for (let y = 120; y < A4_H - 90; y += 38) {
+          ctx.beginPath();
+          ctx.moveTo(70, y);
+          ctx.lineTo(A4_W - 70, y);
+          ctx.stroke();
+        }
+        ctx.strokeStyle = 'rgba(220, 80, 80, 0.4)';
+        ctx.beginPath();
+        ctx.moveTo(135, 70);
+        ctx.lineTo(135, A4_H - 70);
+        ctx.stroke();
+
+        ctx.fillStyle = '#0f172a';
+        ctx.font = 'bold 26px sans-serif';
+        ctx.fillText('BÀI GIẢNG TOÁN & GHI CHÚ KÝ TỰ (TRANG A4)', 150, 150);
+
+        const notes = [
+          'Câu 1: Giải phương trình bậc hai trên tập số thực R:',
+          '   2x² - 7x + 3 = 0   ⇔   (2x - 1)(x - 3) = 0',
+          '   ⇒ Nghiệm x₁ = 1/2  hoặc  x₂ = 3.',
+          '',
+          'Câu 2: Hệ thức lượng trong tam giác vuông ABC:',
+          '   • Định lý Pytago:  a² = b² + c²',
+          '   • Chu vi:  P = a + b + c = 48 (cm)',
+          '   • Diện tích:  S = ½ × b × c = 96 (cm²)',
+          '',
+          'Câu 3: Các ký tự đặc biệt đã lọc sạch dòng kẻ vở:',
+          '   @ # $ % & * ( ) _ + [ ] { } < > ? / \\ | ~',
+          '   ABCDEFGHIJKLMNOPQRSTUVWXYZ - 0123456789'
+        ];
+        ctx.font = 'bold 20px monospace';
+        notes.forEach((ln, i) => {
+          ctx.fillText(ln, 150, 228 + i * 54);
+        });
+
+        document.getElementById('typesetTextarea').value = notes.join('\n');
+      }
+
+      const laser = document.getElementById('scanLaser');
+      laser.classList.remove('hidden');
+      setTimeout(() => laser.classList.add('hidden'), 1100);
+
+      processPureA4Document();
+      renderTypesetA4();
+    }
+
+    function processPureA4Document() {
+      if (isShowingOriginalHold) {
+        a4Ctx.drawImage(rawSourceCanvas, 0, 0, A4_W, A4_H);
+        document.getElementById('previewModeLabel').textContent =
+          '⚠️ ẢNH GỐC CHƯA XỬ LÝ (Có viền bàn đen, bóng râm, vết ố & đốm nhiễu)';
+        document.getElementById('previewModeLabel').className = 'font-bold text-amber-400';
+        return;
+      }
+
+      document.getElementById('previewModeLabel').textContent =
+        '✨ TRANG A4 ĐÃ TÁCH NỀN & KHỬ NÉT THỪA (Chỉ giữ chữ & ký tự trên nền trắng 100%)';
+      document.getElementById('previewModeLabel').className = 'font-bold text-emerald-400';
+
+      const cropPct = parseInt(document.getElementById('rngCropEdge').value, 10) / 100;
+      const sensitivity = parseInt(document.getElementById('rngSensitivity').value, 10);
+      const despeckleLevel = parseInt(document.getElementById('rngDespeckle').value, 10);
+      const a4Margin = parseInt(document.getElementById('rngA4Margin').value, 10);
+
+      const sx = Math.round(rawSourceCanvas.width * cropPct);
+      const sy = Math.round(rawSourceCanvas.height * cropPct);
+      const sw = Math.max(50, rawSourceCanvas.width - sx * 2);
+      const sh = Math.max(50, rawSourceCanvas.height - sy * 2);
+
+      a4Ctx.fillStyle = '#FFFFFF';
+      a4Ctx.fillRect(0, 0, A4_W, A4_H);
+
+      const innerW = A4_W - a4Margin * 2;
+      const innerH = A4_H - a4Margin * 2;
+
+      const workCanvas = document.createElement('canvas');
+      workCanvas.width = innerW;
+      workCanvas.height = innerH;
+      const workCtx = workCanvas.getContext('2d');
+
+      workCtx.fillStyle = '#FFFFFF';
+      workCtx.fillRect(0, 0, innerW, innerH);
+      workCtx.save();
+      workCtx.translate(innerW / 2, innerH / 2);
+      workCtx.rotate((rotationDeg * Math.PI) / 180);
+      workCtx.drawImage(rawSourceCanvas, sx, sy, sw, sh, -innerW / 2, -innerH / 2, innerW, innerH);
+      workCtx.restore();
+
+      const imgData = workCtx.getImageData(0, 0, innerW, innerH);
+      const rgba = imgData.data;
+
+      const gray = new Uint8Array(innerW * innerH);
+      const integral = new Float64Array((innerW + 1) * (innerH + 1));
+
+      for (let y = 0; y < innerH; y++) {
+        let rowSum = 0;
+        for (let x = 0; x < innerW; x++) {
+          const idx = (y * innerW + x) * 4;
+          const r = rgba[idx];
+          const g = rgba[idx + 1];
+          const b = rgba[idx + 2];
+
+          let lum;
+          if (cleanMode === 'drop_lines') {
+            const maxC = Math.max(r, g, b);
+            const minC = Math.min(r, g, b);
+            const saturation = maxC - minC;
+            lum = saturation > 28 ? Math.min(255, maxC + 40) : 0.299 * r + 0.587 * g + 0.114 * b;
+          } else {
+            lum = 0.299 * r + 0.587 * g + 0.114 * b;
+          }
+
+          gray[y * innerW + x] = lum;
+          rowSum += lum;
+          integral[(y + 1) * (innerW + 1) + (x + 1)] =
+            integral[y * (innerW + 1) + (x + 1)] + rowSum;
+        }
+      }
+
+      const binary = new Uint8Array(innerW * innerH);
+      const radius = 22;
+      const effectiveBias = cleanMode === 'drop_lines' ? sensitivity + 10 : sensitivity;
+
+      for (let y = 0; y < innerH; y++) {
+        const y1 = Math.max(0, y - radius);
+        const y2 = Math.min(innerH - 1, y + radius);
+        for (let x = 0; x < innerW; x++) {
+          const x1 = Math.max(0, x - radius);
+          const x2 = Math.min(innerW - 1, x + radius);
+          const count = (x2 - x1 + 1) * (y2 - y1 + 1);
+          const sum =
+            integral[(y2 + 1) * (innerW + 1) + (x2 + 1)] -
+            integral[y1 * (innerW + 1) + (x2 + 1)] -
+            integral[(y2 + 1) * (innerW + 1) + x1] +
+            integral[y1 * (innerW + 1) + x1];
+          const localMean = sum / count;
+          const val = gray[y * innerW + x];
+
+          if (val < localMean - effectiveBias && val < 215) {
+            binary[y * innerW + x] = 1;
+          } else {
+            binary[y * innerW + x] = 0;
+          }
+        }
+      }
+
+      const cleaned = new Uint8Array(binary);
+      if (despeckleLevel > 0) {
+        const minNeighbors = despeckleLevel + 1;
+        for (let y = 2; y < innerH - 2; y++) {
+          for (let x = 2; x < innerW - 2; x++) {
+            const p = y * innerW + x;
+            if (binary[p] === 1) {
+              let nCount = 0;
+              for (let dy = -1; dy <= 1; dy++) {
+                for (let dx = -1; dx <= 1; dx++) {
+                  if (dx === 0 && dy === 0) continue;
+                  nCount += binary[(y + dy) * innerW + (x + dx)];
+                }
+              }
+              if (nCount < minNeighbors) {
+                cleaned[p] = 0;
+              }
+            }
+          }
+        }
+      }
+
+      for (let i = 0; i < cleaned.length; i++) {
+        const idx = i * 4;
+        if (cleaned[i] === 1) {
+          rgba[idx] = 15;
+          rgba[idx + 1] = 23;
+          rgba[idx + 2] = 42;
+          rgba[idx + 3] = 255;
+        } else {
+          rgba[idx] = 255;
+          rgba[idx + 1] = 255;
+          rgba[idx + 2] = 255;
+          rgba[idx + 3] = 255;
+        }
+      }
+
+      workCtx.putImageData(imgData, 0, 0);
+      a4Ctx.drawImage(workCanvas, a4Margin, a4Margin);
+
+      if (eraserStrokes.length > 0) {
+        a4Ctx.save();
+        a4Ctx.fillStyle = '#FFFFFF';
+        a4Ctx.strokeStyle = '#FFFFFF';
+        a4Ctx.lineCap = 'round';
+        a4Ctx.lineJoin = 'round';
+        eraserStrokes.forEach(stroke => {
+          a4Ctx.lineWidth = stroke.r * 2;
+          a4Ctx.beginPath();
+          stroke.pts.forEach((pt, idx) => {
+            if (idx === 0) a4Ctx.moveTo(pt.x, pt.y);
+            else a4Ctx.lineTo(pt.x, pt.y);
+          });
+          a4Ctx.stroke();
+          if (stroke.pts.length === 1) {
+            a4Ctx.beginPath();
+            a4Ctx.arc(stroke.pts[0].x, stroke.pts[0].y, stroke.r, 0, Math.PI * 2);
+            a4Ctx.fill();
+          }
+        });
+        a4Ctx.restore();
+      }
+    }
+
+    function getA4Coords(evt) {
+      const rect = a4Canvas.getBoundingClientRect();
+      const cx = evt.touches ? evt.touches[0].clientX : evt.clientX;
+      const cy = evt.touches ? evt.touches[0].clientY : evt.clientY;
+      return {
+        x: ((cx - rect.left) / rect.width) * A4_W,
+        y: ((cy - rect.top) / rect.height) * A4_H
+      };
+    }
+
+    a4Canvas.addEventListener('pointerdown', e => {
+      if (!isEraserActive) return;
+      isErasingDrag = true;
+      const r = parseInt(document.getElementById('rngEraserSize').value, 10);
+      const pt = getA4Coords(e);
+      eraserStrokes.push({ r, pts: [pt] });
+      processPureA4Document();
+    });
+
+    a4Canvas.addEventListener('pointermove', e => {
+      if (!isEraserActive || !isErasingDrag) return;
+      const pt = getA4Coords(e);
+      const last = eraserStrokes[eraserStrokes.length - 1];
+      if (last) {
+        last.pts.push(pt);
+        processPureA4Document();
+      }
+    });
+
+    window.addEventListener('pointerup', () => {
+      isErasingDrag = false;
+    });
+
+    document.getElementById('btnEraserTool').addEventListener('click', () => {
+      isEraserActive = !isEraserActive;
+      const btn = document.getElementById('btnEraserTool');
+      const hint = document.getElementById('eraserHint');
+      if (isEraserActive) {
+        btn.textContent = '✅ Đang Bật Cục Tẩy (Chạm/Kéo Để Xóa)';
+        btn.className = 'px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold text-xs shadow cursor-pointer transition border-0';
+        hint.classList.remove('hidden');
+      } else {
+        btn.textContent = '🧽 Bật Cục Tẩy Xóa Nét Thừa';
+        btn.className = 'px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow cursor-pointer transition border-0';
+        hint.classList.add('hidden');
+      }
+    });
+
+    document.getElementById('btnUndoEraser').addEventListener('click', () => {
+      if (eraserStrokes.length > 0) {
+        eraserStrokes.pop();
+        processPureA4Document();
+        showToast('↩️ Đã hoàn tác nét tẩy gần nhất.');
+      } else {
+        showToast('Chưa có nét tẩy nào để hoàn tác.');
+      }
+    });
+
+    document.getElementById('btnRotate90').addEventListener('click', () => {
+      rotationDeg = (rotationDeg + 90) % 360;
+      processPureA4Document();
+    });
+
+    const btnCompare = document.getElementById('btnCompareHold');
+    ['pointerdown', 'touchstart'].forEach(ev =>
+      btnCompare.addEventListener(ev, e => {
+        e.preventDefault();
+        isShowingOriginalHold = true;
+        processPureA4Document();
+      })
+    );
+    ['pointerup', 'pointerleave', 'touchend'].forEach(ev =>
+      btnCompare.addEventListener(ev, () => {
+        if (isShowingOriginalHold) {
+          isShowingOriginalHold = false;
+          processPureA4Document();
+        }
+      })
+    );
+
+    document.querySelectorAll('.clean-mode-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        cleanMode = btn.getAttribute('data-cleanmode').trim();
+        document.querySelectorAll('.clean-mode-btn').forEach(b => {
+          b.className = 'clean-mode-btn py-2 px-3 rounded-xl font-bold text-xs bg-slate-800 text-slate-200 border border-slate-700 cursor-pointer text-left flex items-center justify-between';
+        });
+        btn.className = 'clean-mode-btn py-2 px-3 rounded-xl font-bold text-xs bg-emerald-600 text-white shadow cursor-pointer text-left flex items-center justify-between border-0';
+        processPureA4Document();
+      });
+    });
+
+    ['rngCropEdge', 'rngSensitivity', 'rngDespeckle', 'rngA4Margin', 'rngEraserSize'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        document.getElementById('lblCropEdge').textContent = document.getElementById('rngCropEdge').value + '%';
+        document.getElementById('lblSensitivity').textContent = document.getElementById('rngSensitivity').value;
+        document.getElementById('lblDespeckle').textContent = 'Mức ' + document.getElementById('rngDespeckle').value;
+        document.getElementById('lblA4Margin').textContent = document.getElementById('rngA4Margin').value + ' px';
+        document.getElementById('lblEraserSize').textContent = document.getElementById('rngEraserSize').value + ' px';
+        processPureA4Document();
+      });
+    });
+
+    document.getElementById('btnSampleDirtyDoc').addEventListener('click', () => generateDirtySamplePhoto('dirty_doc'));
+    document.getElementById('btnSampleHandwriting').addEventListener('click', () => generateDirtySamplePhoto('notebook'));
+
+    document.getElementById('scanFileInput').addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        const img = new Image();
+        img.onload = () => {
+          rawSourceCanvas.width = A4_W;
+          rawSourceCanvas.height = A4_H;
+          rawSourceCtx.fillStyle = '#FFFFFF';
+          rawSourceCtx.fillRect(0, 0, A4_W, A4_H);
+          const scale = Math.min(A4_W / img.width, A4_H / img.height);
+          const dw = img.width * scale;
+          const dh = img.height * scale;
+          rawSourceCtx.drawImage(img, (A4_W - dw) / 2, (A4_H - dh) / 2, dw, dh);
+          eraserStrokes = [];
+          processPureA4Document();
+          showToast('✅ Đã quét ảnh của bạn sang khung A4 trắng tinh!');
+        };
+        img.src = ev.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    function renderTypesetA4() {
+      const font = document.getElementById('typeFontSelect').value;
+      const fontSize = parseInt(document.getElementById('typeSizeSelect').value, 10);
+      const text = document.getElementById('typesetTextarea').value || '';
+
+      typesetCtx.fillStyle = '#FFFFFF';
+      typesetCtx.fillRect(0, 0, A4_W, A4_H);
+
+      typesetCtx.fillStyle = '#0f172a';
+      typesetCtx.font = `${fontSize}px ${font}`;
+      const marginX = 72;
+      let cursorY = 88;
+      const lineHeight = Math.round(fontSize * 1.65);
+      const maxWidth = A4_W - marginX * 2;
+
+      const rawLines = text.split('\n');
+      rawLines.forEach(rawLine => {
+        const words = rawLine.split(' ');
+        let currentLine = '';
+        words.forEach(w => {
+          const testLine = currentLine ? currentLine + ' ' + w : w;
+          if (typesetCtx.measureText(testLine).width > maxWidth) {
+            typesetCtx.fillText(currentLine, marginX, cursorY);
+            currentLine = w;
+            cursorY += lineHeight;
+          } else {
+            currentLine = testLine;
+          }
+        });
+        typesetCtx.fillText(currentLine, marginX, cursorY);
+        cursorY += lineHeight;
+      });
+    }
+
+    ['typeFontSelect', 'typeSizeSelect', 'typesetTextarea'].forEach(id => {
+      document.getElementById(id).addEventListener('input', renderTypesetA4);
+    });
+
+    async function saveOrShareBlob(blob, filename) {
+      try {
+        if (navigator.canShare && window.File) {
+          const file = new File([blob], filename, { type: blob.type });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              title: filename,
+              files: [file]
+            });
+            return;
+          }
+        }
+      } catch (err) {
+        // Fallback to standard download
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function exportCanvasToTrueA4Pdf(canvas, filename) {
+      const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+      const base64 = jpegDataUrl.split(',')[1];
+      const binaryImg = atob(base64);
+      const imgLen = binaryImg.length;
+      const imgW = canvas.width;
+      const imgH = canvas.height;
+
+      const pdfW = 595;
+      const pdfH = 842;
+
+      const obj1 = '1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n';
+      const obj2 = '2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n';
+      const obj3 = `3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /XObject << /Im0 4 0 R >> >> /MediaBox [0 0 ${pdfW} ${pdfH}] /Contents 5 0 R >>\nendobj\n`;
+      const obj4Head = `4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${imgW} /Height ${imgH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imgLen} >>\nstream\n`;
+      const obj4Tail = '\nendstream\nendobj\n';
+      const stream5 = `q ${pdfW} 0 0 ${pdfH} 0 0 cm /Im0 Do Q`;
+      const obj5 = `5 0 obj\n<< /Length ${stream5.length} >>\nstream\n${stream5}\nendstream\nendobj\n`;
+
+      const chunks = ['%PDF-1.4\n', obj1, obj2, obj3, obj4Head, binaryImg, obj4Tail, obj5];
+      const total = chunks.reduce((s, c) => s + c.length, 0);
+      const bytes = new Uint8Array(total);
+      let pos = 0;
+      for (const c of chunks) {
+        for (let i = 0; i < c.length; i++) {
+          bytes[pos++] = c.charCodeAt(i) & 0xff;
+        }
+      }
+      const blob = new Blob([bytes], { type: 'application/pdf' });
+      saveOrShareBlob(blob, filename);
+    }
+
+    function downloadCanvasImage(canvas, mime, ext) {
+      canvas.toBlob(
+        blob => {
+          if (blob) saveOrShareBlob(blob, `A4_CleanScan_${Date.now()}.${ext}`);
+        },
+        mime,
+        0.95
+      );
+    }
+
+    document.getElementById('btnExportA4Pdf').addEventListener('click', () => {
+      exportCanvasToTrueA4Pdf(a4Canvas, `A4_SachNet_${Date.now()}.pdf`);
+      showToast('📄 Đã xuất file PDF khổ A4 trắng tinh!');
+    });
+
+    document.getElementById('btnExportA4Png').addEventListener('click', () => {
+      downloadCanvasImage(a4Canvas, 'image/png', 'png');
+      showToast('🖼️ Đã xuất ảnh A4 trắng tinh (PNG)!');
+    });
+
+    document.getElementById('btnDownloadTypesetPdf').addEventListener('click', () => {
+      renderTypesetA4();
+      exportCanvasToTrueA4Pdf(typesetCanvas, `A4_DanhMay_${Date.now()}.pdf`);
+      showToast('📄 Đã xuất PDF A4 đánh máy mới!');
+    });
+
+    document.getElementById('btnDownloadTypesetPng').addEventListener('click', () => {
+      renderTypesetA4();
+      downloadCanvasImage(typesetCanvas, 'image/png', 'png');
+      showToast('🖼️ Đã tải ảnh A4 đánh máy mới!');
+    });
+
+    document.getElementById('btnConvertExport').addEventListener('click', () => {
+      const fmt = document.getElementById('convFormatSelect').value;
+      if (fmt === 'application/pdf') {
+        exportCanvasToTrueA4Pdf(a4Canvas, `A4_Converted_${Date.now()}.pdf`);
+      } else {
+        const ext = fmt === 'image/png' ? 'png' : fmt === 'image/webp' ? 'webp' : 'jpg';
+        downloadCanvasImage(a4Canvas, fmt, ext);
+      }
+      showToast('⚡ Đã chuyển đổi và lưu file A4!');
+    });
+
+    function updateQuickUnits() {
+      const v = parseFloat(document.getElementById('quickValInput').value) || 0;
+      const mode = document.getElementById('quickUnitSelect').value;
+      const out = document.getElementById('quickUnitOutput');
+      if (mode === 'a4_to_mm') {
+        out.textContent = `${v} tờ A4 = ${v * 210} × ${v * 297} mm  |  Chuẩn in 300 DPI: ${v * 2480} × ${v * 3508} px`;
+      } else if (mode === 'usd_to_vnd') {
+        out.textContent = `${v} USD = ${(v * 25450).toLocaleString('vi-VN')} VNĐ`;
+      } else if (mode === 'gold_to_vnd') {
+        out.textContent = `${v} Chỉ Vàng 9999 = ${(v * 8650000).toLocaleString('vi-VN')} VNĐ`;
+      } else if (mode === 'saobac_to_m2') {
+        out.textContent = `${v} Sào Bắc Bộ = ${(v * 360).toLocaleString('vi-VN')} m²`;
+      }
+    }
+    document.getElementById('quickValInput').addEventListener('input', updateQuickUnits);
+    document.getElementById('quickUnitSelect').addEventListener('change', updateQuickUnits);
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const target = btn.getAttribute('data-tab');
+        document.querySelectorAll('.tab-btn').forEach(b => {
+          b.className = 'tab-btn flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs sm:text-sm bg-slate-800 text-slate-200 hover:opacity-90 cursor-pointer transition border-0';
+        });
+        btn.className = 'tab-btn flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl font-bold text-xs sm:text-sm bg-emerald-600 text-white shadow cursor-pointer transition border-0';
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+        document.getElementById('tab-' + target).classList.remove('hidden');
+        if (target === 'typeset') renderTypesetA4();
+        if (target === 'converter') updateQuickUnits();
+      });
+    });
+
+    generateDirtySamplePhoto('dirty_doc');
+    updateQuickUnits();
+  </script>
+
+<!-- Floating Monetization Bar injected by MoneyHunter247 -->
+<div style="position:fixed;bottom:12px;right:12px;z-index:999999;background:rgba(15,23,42,0.95);border:1px solid #10b981;border-radius:12px;padding:8px 14px;display:flex;align-items:center;gap:10px;font-family:system-ui,sans-serif;box-shadow:0 8px 25px rgba(0,0,0,0.5);">
+  <span style="color:#f8fafc;font-size:13px;font-weight:600;">⚡ Want this full source code?</span>
+  <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=xaductrung%40gmail.com&item_name=Commercial+Source+Code+License&amount=49&currency_code=USD&return=https%3A%2F%2Ffiles.catbox.moe%2Fytghdr.zip" target="_blank" style="background:#ffc439;color:#111827;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">💳 Buy Source ($49 PayPal)</a>
+  <a href="https://xaductrung-rgb.github.io" target="_blank" style="background:#10b981;color:#022c22;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">🛒 All Bundles</a>
+</div>
+</body>
+</html>

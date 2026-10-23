@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>Reef Pop</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; background: #03223f; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; font-family: "Trebuchet MS", "Segoe UI", sans-serif; }
+  #wrap { position: relative; margin: 0 auto; }
+  canvas { display: block; }
+  .ui { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; color: #fff; padding: 18px; overflow-y: auto; touch-action: pan-y; }
+  .ui.show { display: flex; }
+  .dim { background: rgba(2, 20, 45, 0.78); }
+  h1 { font-size: 54px; margin: 34px 0 4px; text-shadow: 0 4px 0 rgba(0,0,0,.35); color: #ffd166; }
+  h2 { font-size: 30px; margin: 14px 0 10px; text-shadow: 0 3px 0 rgba(0,0,0,.35); }
+  .sub { color: #bde0fe; margin-bottom: 14px; text-align: center; line-height: 1.5; }
+  .btn { border: 0; border-radius: 999px; padding: 14px 26px; margin: 7px; font: 900 22px "Trebuchet MS", sans-serif; color: #fff; background: #06d6a0; box-shadow: 0 5px 0 #059a73; cursor: pointer; min-width: 240px; }
+  .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #059a73; }
+  .btn.yellow { background: #ffb703; box-shadow: 0 5px 0 #c98a00; }
+  .btn.pink { background: #ef476f; box-shadow: 0 5px 0 #b02a4c; }
+  .btn.gray { background: #4a5f80; box-shadow: 0 5px 0 #2f3d55; }
+  .btn.small { min-width: 0; padding: 9px 16px; font-size: 16px; }
+  .topbar { position: absolute; top: 10px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .pill { background: rgba(0,0,0,.35); border-radius: 999px; padding: 6px 12px; font-weight: 900; font-size: 17px; color: #ffe066; white-space: nowrap; }
+  .map { width: 100%; max-width: 380px; display: flex; flex-direction: column-reverse; align-items: center; padding: 20px 0 60px; }
+  .node { width: 66px; height: 66px; border-radius: 50%; border: 0; margin: 8px 0; font: 900 22px sans-serif; color: #03223f; background: #ffd166; box-shadow: 0 5px 0 #c98a00; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+  .node small { font-size: 11px; color: #ef476f; letter-spacing: -1px; }
+  .node.locked { background: #4a5f80; box-shadow: 0 5px 0 #2f3d55; color: #9fb3d1; cursor: default; }
+  .node.cur { animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { transform: scale(1.12); } }
+  .zone { width: 100%; text-align: center; font-weight: 900; color: #bde0fe; margin: 18px 0 4px; font-size: 18px; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+  .tab { border: 0; border-radius: 999px; padding: 8px 14px; font: 900 15px sans-serif; background: rgba(255,255,255,.15); color: #fff; cursor: pointer; }
+  .tab.on { background: #ffb703; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; width: 100%; max-width: 400px; }
+  .card { background: rgba(255,255,255,.1); border-radius: 16px; padding: 10px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .card .name { font-weight: 900; margin: 4px 0; }
+  .card .info { font-size: 12px; color: #bde0fe; min-height: 30px; }
+  .card.wide { grid-column: 1 / -1; flex-direction: row; justify-content: space-between; text-align: left; }
+  .stars { font-size: 46px; letter-spacing: 6px; margin: 6px 0; color: #ffd166; }
+  .toast { position: absolute; left: 50%; bottom: 90px; transform: translateX(-50%); background: rgba(0,0,0,.8); color: #fff; padding: 10px 18px; border-radius: 999px; font-weight: 900; display: none; z-index: 9; white-space: nowrap; }
+  #gameBar { position: absolute; left: 0; right: 0; bottom: 14px; display: none; justify-content: center; gap: 10px; }
+  .boost { border: 0; width: 64px; height: 64px; border-radius: 18px; background: rgba(255,255,255,.15); font-size: 28px; color: #fff; position: relative; cursor: pointer; }
+  .boost.on { background: #ffb703; }
+  .boost b { position: absolute; right: -4px; bottom: -4px; background: #ef476f; border-radius: 999px; font-size: 12px; padding: 2px 6px; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c"></canvas>
+
+  <div id="scrMenu" class="ui show dim">
+    <div class="topbar"><button class="btn small gray" data-go="settings">⚙️</button><span class="pill" data-lives>❤️ 5</span><span class="pill" data-pearls>⚪ 0</span></div>
+    <h1>REEF POP</h1>
+    <div class="sub">Ghép 3 sinh vật biển giống nhau • Cứu rạn san hô cùng Pengu!</div>
+    <canvas id="menuArt" width="220" height="200" style="width:220px;height:200px"></canvas>
+    <button class="btn" data-go="map">▶ CHƠI</button>
+    <button class="btn pink" data-go="shop">🛒 CỬA HÀNG</button>
+  </div>
+
+  <div id="scrMap" class="ui dim">
+    <div class="topbar"><button class="btn small gray" data-go="menu">◀</button><span class="pill" data-lives>❤️ 5</span><span class="pill" data-pearls>⚪ 0</span></div>
+    <div class="map" id="mapList"></div>
+  </div>
+
+  <div id="scrPre" class="ui dim">
+    <h2 style="margin-top:50px" id="preTitle">MÀN 1</h2>
+    <div class="sub" id="preGoal"></div>
+    <div class="sub" style="margin:0 0 6px">Mang theo trợ giúp:</div>
+    <div class="grid" id="preItems"></div>
+    <button class="btn" id="preStart" style="margin-top:14px">▶ BẮT ĐẦU (❤️ -1)</button>
+    <button class="btn small gray" data-go="map">Quay lại</button>
+  </div>
+
+  <div id="scrWin" class="ui dim">
+    <h2 style="margin-top:70px">TUYỆT VỜI! 🎉</h2>
+    <div class="stars" id="winStars">★★★</div>
+    <div class="sub" id="winInfo"></div>
+    <button class="btn yellow" id="winDouble">▶ XEM QC: x2 NGỌC</button>
+    <button class="btn" id="winNext">MÀN TIẾP ▶</button>
+    <button class="btn small gray" data-go="map">Bản đồ</button>
+  </div>
+
+  <div id="scrLose" class="ui dim">
+    <h2 style="margin-top:70px" id="loseTitle">HẾT LƯỢT! 😢</h2>
+    <div class="sub" id="loseInfo"></div>
+    <button class="btn yellow" id="loseAd">▶ XEM QC: +5 LƯỢT</button>
+    <button class="btn pink" id="loseBuy">+5 LƯỢT (⚪ 90)</button>
+    <button class="btn gray" id="loseQuit">Bỏ cuộc</button>
+  </div>
+
+  <div id="scrNoLives" class="ui dim">
+    <h2 style="margin-top:90px">HẾT TIM ❤️</h2>
+    <div class="sub" id="nlInfo"></div>
+    <button class="btn yellow" id="nlAd">▶ XEM QC: +1 TIM</button>
+    <button class="btn pink" id="nlBuy">ĐẦY TIM (⚪ 120)</button>
+    <button class="btn small gray" data-go="map">Đợi</button>
+  </div>
+
+  <div id="scrShop" class="ui dim">
+    <div class="topbar"><button class="btn small gray" data-back>◀</button><span class="pill" data-lives>❤️ 5</span><span class="pill" data-pearls>⚪ 0</span></div>
+    <h2 style="margin-top:50px">CỬA HÀNG</h2>
+    <div class="tabs"><button class="tab on" data-tab="items">Trợ giúp</button><button class="tab" data-tab="iap">💎 Nạp</button></div>
+    <div class="grid" id="shopGrid"></div>
+  </div>
+
+  <div id="scrSettings" class="ui dim">
+    <div class="topbar"><button class="btn small gray" id="setBack">◀</button><span></span></div>
+    <h2 style="margin-top:50px">⚙️ CÀI ĐẶT</h2>
+    <div class="grid" id="setGrid" style="grid-template-columns:1fr"></div>
+  </div>
+
+  <div id="gameBar">
+    <button class="boost" id="bHammer">🔨<b id="cHammer">0</b></button>
+    <button class="boost" id="bShuffle">🔄<b id="cShuffle">0</b></button>
+    <button class="boost" id="bSet" style="font-size:24px">⚙️</button>
+    <button class="boost" id="bPause" style="font-size:22px">II</button>
+  </div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+// =====================================================================
+//  REEF POP — original match-3 puzzle (levels, goals, boosters, shop, IAP, ads)
+// =====================================================================
+const W = 420, H = 760;
+const cv = document.getElementById("c"), ctx = cv.getContext("2d"), wrap = document.getElementById("wrap");
+let scale = 1;
+function resize() {
+  scale = Math.min(innerWidth / W, innerHeight / H);
+  const dpr = devicePixelRatio || 1;
+  cv.width = W * scale * dpr; cv.height = H * scale * dpr;
+  cv.style.width = W * scale + "px"; cv.style.height = H * scale + "px";
+  wrap.style.width = W * scale + "px"; wrap.style.height = H * scale + "px";
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+  document.querySelectorAll(".ui").forEach((u) => (u.style.fontSize = 16 * Math.max(0.8, scale) + "px"));
+}
+addEventListener("resize", resize); resize();
+
+// ------------------------------------------------------------- SAVE
+const SAVE_KEY = "reefpop_save_v1";
+const MAX_LIVES = 5, LIFE_MS = 20 * 60 * 1000;
+const save = Object.assign({
+  pearls: 200, lives: MAX_LIVES, lifeTs: Date.now(), stars: {}, unlocked: 0,
+  items: { moves3: 1, startBomb: 1, hammer: 2, shuffle: 2 },
+  noAds: false, settings: { sound: true, vibrate: true, diff: "normal" },
+}, JSON.parse(localStorage.getItem(SAVE_KEY) || "{}"));
+save.settings = Object.assign({ sound: true, music: true, vibrate: true, hint: true, fast: false, diff: "normal" }, save.settings || {});
+function persist() { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); refreshTop(); }
+function tickLives() {
+  if (save.lives >= MAX_LIVES) { save.lifeTs = Date.now(); return; }
+  const n = Math.floor((Date.now() - save.lifeTs) / LIFE_MS);
+  if (n > 0) { save.lives = Math.min(MAX_LIVES, save.lives + n); save.lifeTs += n * LIFE_MS; persist(); }
+}
+function lifeTimer() {
+  if (save.lives >= MAX_LIVES) return "ĐẦY";
+  const ms = LIFE_MS - (Date.now() - save.lifeTs), m = Math.max(0, Math.floor(ms / 60000)), s = Math.max(0, Math.floor((ms % 60000) / 1000));
+  return `${m}:${String(s).padStart(2, "0")}`;
+}
+function refreshTop() {
+  document.querySelectorAll("[data-pearls]").forEach((e) => (e.textContent = "⚪ " + save.pearls));
+  document.querySelectorAll("[data-lives]").forEach((e) => (e.textContent = `❤️ ${save.lives}` + (save.lives < MAX_LIVES ? ` ${lifeTimer()}` : "")));
+}
+setInterval(() => { tickLives(); refreshTop(); if (scr === "nolives") document.getElementById("nlInfo").textContent = `Tim tiếp theo sau ${lifeTimer()}`; }, 1000);
+function toast(m) { const t = document.getElementById("toast"); t.textContent = m; t.style.display = "block"; clearTimeout(toast.h); toast.h = setTimeout(() => (t.style.display = "none"), 1800); }
+
+const DIFFS = {
+  easy: { name: "Dễ", icon: "🙂", moves: 5, colors: -1, reward: 0.7 },
+  normal: { name: "Thường", icon: "😎", moves: 0, colors: 0, reward: 1 },
+  hard: { name: "Khó", icon: "😤", moves: -4, colors: 0, reward: 1.5 },
+  expert: { name: "Chuyên gia", icon: "💀", moves: -7, colors: 1, reward: 2 },
+};
+const D = () => DIFFS[save.settings.diff] || DIFFS.normal;
+function vibrate(ms) { if (save.settings.vibrate && navigator.vibrate) navigator.vibrate(ms); }
+
+// ------------------------------------------------------------- AUDIO
+let ac = null;
+function audio() { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); if (ac.state === "suspended") ac.resume(); return ac; }
+function tone(f0, f1, dur, type = "sine", vol = 0.15, delay = 0) {
+  if (!save.settings.sound) return;
+  const a = audio(), o = a.createOscillator(), g = a.createGain(), t0 = a.currentTime + delay;
+  o.type = type; o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t0 + dur);
+  g.gain.setValueAtTime(vol, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+  o.connect(g).connect(a.destination); o.start(t0); o.stop(t0 + dur);
+}
+const sfx = {
+  swap: () => tone(500, 700, 0.08, "sine", 0.1),
+  bad: () => { tone(300, 200, 0.12, "square", 0.06); tone(250, 160, 0.12, "square", 0.06, 0.1); },
+  pop: (chain) => { const f = 500 * Math.pow(1.12, Math.min(chain, 10)); tone(f, f * 1.6, 0.12, "triangle", 0.14); },
+  special: () => { tone(200, 1200, 0.3, "sawtooth", 0.07); tone(900, 1800, 0.25, "sine", 0.1, 0.05); },
+  boom: () => { tone(150, 40, 0.4, "sine", 0.3); tone(800, 100, 0.3, "sawtooth", 0.06); },
+  win: () => [523, 659, 784, 1047, 1319].forEach((n, i) => tone(n, n, 0.3, "triangle", 0.16, i * 0.11)),
+  lose: () => [392, 330, 262].forEach((n, i) => tone(n, n * 0.98, 0.35, "triangle", 0.14, i * 0.18)),
+  buy: () => { tone(800, 1600, 0.15, "square", 0.07); tone(1200, 2400, 0.2, "square", 0.07, 0.1); },
+};
+
+// ------------------------------------------------------------- PIECES (original sea critters)
+const COLORS = [
+  { name: "Cua", c: "#ef476f", d: "#b02a4c" },
+  { name: "Cá", c: "#ff9f1c", d: "#c76e00" },
+  { name: "Sao biển", c: "#ffd166", d: "#c99a1e" },
+  { name: "Rùa", c: "#06d6a0", d: "#03956e" },
+  { name: "Sứa", c: "#4cc9f0", d: "#1f8db3" },
+  { name: "Ốc", c: "#b388eb", d: "#7b4fbf" },
+];
+// ---------- Glossy pseudo-3D rendering (pre-rendered sprites + live special FX) ----------
+function shadeEllipse(g, x, y, rx, ry, base, dark, light) {
+  const gr = g.createRadialGradient(x - rx * 0.35, y - ry * 0.45, Math.min(rx, ry) * 0.1, x, y, Math.max(rx, ry) * 1.1);
+  gr.addColorStop(0, light); gr.addColorStop(0.45, base); gr.addColorStop(1, dark);
+  g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, 7); g.fill();
+}
+function shadePath(g, pathFn, cx, cy, r, base, dark, light) {
+  const gr = g.createRadialGradient(cx - r * 0.35, cy - r * 0.45, r * 0.1, cx, cy, r * 1.15);
+  gr.addColorStop(0, light); gr.addColorStop(0.5, base); gr.addColorStop(1, dark);
+  g.fillStyle = gr; g.beginPath(); pathFn(); g.fill();
+}
+function gloss(g, x, y, rx, ry, a = 0.6) {
+  const gr = g.createLinearGradient(x, y - ry, x, y + ry);
+  gr.addColorStop(0, `rgba(255,255,255,${a})`); gr.addColorStop(1, "rgba(255,255,255,0)");
+  g.fillStyle = gr; g.beginPath(); g.ellipse(x, y, rx, ry, -0.3, 0, 7); g.fill();
+}
+function eye3d(g, x, y, r) {
+  shadeEllipse(g, x, y, r, r * 1.08, "#f1f5f9", "#94a3b8", "#ffffff");
+  g.fillStyle = "#1b1b2f"; g.beginPath(); g.arc(x + r * 0.18, y + r * 0.2, r * 0.55, 0, 7); g.fill();
+  g.fillStyle = "#fff"; g.beginPath(); g.arc(x - r * 0.05, y - r * 0.05, r * 0.22, 0, 7); g.fill();
+}
+function smile(g, x, y, w, color) { g.strokeStyle = color; g.lineWidth = 1.8; g.lineCap = "round"; g.beginPath(); g.arc(x, y, w, 0.2, Math.PI - 0.2); g.stroke(); }
+function blush(g, x, y) { g.fillStyle = "rgba(255,120,150,.45)"; g.beginPath(); g.ellipse(x, y, 3.5, 2, 0, 0, 7); g.fill(); }
+
+const PAL = [
+  { base: "#ff4d6d", dark: "#a4133c", light: "#ffc2d1" }, // crab
+  { base: "#ff9f1c", dark: "#c2410c", light: "#ffe0b3" }, // fish
+  { base: "#ffd60a", dark: "#b08900", light: "#fff7c2" }, // starfish
+  { base: "#2ec4b6", dark: "#0b6e63", light: "#c6f7f0" }, // turtle
+  { base: "#4cc9f0", dark: "#1d6fa5", light: "#e3f8ff" }, // jelly
+  { base: "#b388eb", dark: "#5a2a8a", light: "#efe0ff" }, // shell
+];
+function paintCritter(g, t) {
+  const p = PAL[t];
+  g.save();
+  g.shadowColor = "rgba(0,20,40,.45)"; g.shadowBlur = 6; g.shadowOffsetY = 4;
+  if (t === 0) { // CRAB
+    g.strokeStyle = p.dark; g.lineWidth = 2.5; g.lineCap = "round";
+    for (const s of [-1, 1]) for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(s * 10, 6 + i * 4); g.lineTo(s * 19, 9 + i * 5); g.stroke(); }
+    for (const s of [-1, 1]) { shadeEllipse(g, s * 17, -7, 7.5, 6.5, p.base, p.dark, p.light); }
+    shadeEllipse(g, 0, 4, 16, 12, p.base, p.dark, p.light);
+    g.shadowColor = "transparent";
+    g.fillStyle = p.dark; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(s * 20, -13); g.lineTo(s * 16, -7); g.lineTo(s * 23, -9); g.fill(); }
+    g.strokeStyle = p.dark; g.lineWidth = 2; for (const s of [-1, 1]) { g.beginPath(); g.moveTo(s * 4, -5); g.lineTo(s * 6, -11); g.stroke(); }
+    gloss(g, -4, -1, 9, 4.5);
+    eye3d(g, -6, -13, 4.6); eye3d(g, 6, -13, 4.6);
+    smile(g, 0, 4, 4, p.dark); blush(g, -9, 6); blush(g, 9, 6);
+  } else if (t === 1) { // FISH
+    shadePath(g, () => { g.moveTo(9, 0); g.quadraticCurveTo(18, -14, 23, -11); g.quadraticCurveTo(19, 0, 23, 11); g.quadraticCurveTo(18, 14, 9, 0); }, 16, 0, 10, p.base, p.dark, p.light);
+    shadePath(g, () => { g.moveTo(-8, -11); g.quadraticCurveTo(0, -20, 7, -10); g.closePath(); }, 0, -13, 6, p.base, p.dark, p.light);
+    shadeEllipse(g, -2, 0, 15, 13, p.base, p.dark, p.light);
+    g.shadowColor = "transparent";
+    g.save(); g.beginPath(); g.ellipse(-2, 0, 15, 13, 0, 0, 7); g.clip();
+    for (const bx of [2, -12]) { const gr = g.createLinearGradient(bx - 3, 0, bx + 3, 0); gr.addColorStop(0, "#e2e8f0"); gr.addColorStop(0.5, "#ffffff"); gr.addColorStop(1, "#cbd5e1"); g.fillStyle = gr; g.beginPath(); g.ellipse(bx, 0, 3.2, 14, 0, 0, 7); g.fill(); g.strokeStyle = "rgba(60,20,0,.35)"; g.lineWidth = 1; g.stroke(); }
+    g.restore();
+    gloss(g, -5, -6, 9, 4);
+    eye3d(g, -8, -3, 5); smile(g, -12, 4, 2.5, p.dark);
+  } else if (t === 2) { // STARFISH
+    const star = () => { for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + (i * Math.PI) / 5, r = i % 2 ? 9 : 20; const fn = i ? g.lineTo : g.moveTo; fn.call(g, Math.cos(a) * r, Math.sin(a) * r + 2); } g.closePath(); };
+    g.lineJoin = "round"; shadePath(g, star, 0, 2, 20, p.base, p.dark, p.light);
+    g.shadowColor = "transparent";
+    g.strokeStyle = p.dark; g.lineWidth = 1.5; g.beginPath(); star(); g.stroke();
+    g.fillStyle = "rgba(255,255,255,.55)"; for (let i = 0; i < 5; i++) { const a = -Math.PI / 2 + (i * 2 * Math.PI) / 5; g.beginPath(); g.arc(Math.cos(a) * 13, Math.sin(a) * 13 + 2, 1.6, 0, 7); g.fill(); }
+    gloss(g, -3, -4, 7, 3.5);
+    eye3d(g, -4.5, 0, 3.6); eye3d(g, 4.5, 0, 3.6); smile(g, 0, 5, 3, p.dark);
+  } else if (t === 3) { // TURTLE
+    for (const [fx, fy] of [[-15, -6], [15, -6], [-14, 12], [14, 12]]) shadeEllipse(g, fx, fy, 5.5, 4, "#80ed99", "#2d6a4f", "#d8f3dc");
+    shadeEllipse(g, 0, -15, 7, 6.5, "#80ed99", "#2d6a4f", "#d8f3dc");
+    shadeEllipse(g, 0, 4, 16, 13, p.base, p.dark, p.light);
+    g.shadowColor = "transparent";
+    g.strokeStyle = "rgba(5,60,50,.55)"; g.lineWidth = 1.6;
+    g.beginPath(); for (let i = 0; i < 6; i++) { const a = (i * Math.PI) / 3 + Math.PI / 6; const fn = i ? g.lineTo : g.moveTo; fn.call(g, Math.cos(a) * 6.5, Math.sin(a) * 5.5 + 4); } g.closePath(); g.stroke();
+    for (let i = 0; i < 6; i++) { const a = (i * Math.PI) / 3 + Math.PI / 6; g.beginPath(); g.moveTo(Math.cos(a) * 6.5, Math.sin(a) * 5.5 + 4); g.lineTo(Math.cos(a) * 15, Math.sin(a) * 12 + 4); g.stroke(); }
+    gloss(g, -4, -2, 9, 4.5);
+    eye3d(g, -3, -16, 2.6); eye3d(g, 3, -16, 2.6);
+  } else if (t === 4) { // JELLYFISH
+    g.lineCap = "round";
+    for (let i = -2; i <= 2; i++) { g.strokeStyle = i % 2 ? "rgba(76,201,240,.85)" : "rgba(160,230,255,.9)"; g.lineWidth = 3; g.beginPath(); g.moveTo(i * 5.5, 4); g.bezierCurveTo(i * 5.5 + 4, 9, i * 5.5 - 4, 14, i * 5.5 + 1, 21); g.stroke(); }
+    const dome = () => { g.moveTo(-17, 5); g.bezierCurveTo(-17, -22, 17, -22, 17, 5); for (let i = 0; i < 5; i++) g.quadraticCurveTo(17 - i * 6.8 - 3.4, 9, 17 - (i + 1) * 6.8, 5); g.closePath(); };
+    shadePath(g, dome, 0, -4, 18, p.base, p.dark, p.light);
+    g.shadowColor = "transparent";
+    g.fillStyle = "rgba(255,255,255,.25)"; g.beginPath(); g.ellipse(0, -2, 10, 6, 0, 0, 7); g.fill();
+    gloss(g, -5, -11, 8, 4, 0.75);
+    eye3d(g, -6, -3, 3.8); eye3d(g, 6, -3, 3.8); smile(g, 0, 1, 2.5, p.dark); blush(g, -10, 1); blush(g, 10, 1);
+  } else { // SHELL
+    const fan = () => { g.moveTo(0, 15); for (let i = 0; i <= 8; i++) { const a = Math.PI + 0.15 + (i * (Math.PI - 0.3)) / 8; const r = 20; g.quadraticCurveTo(Math.cos(a - 0.17) * (r + 3), Math.sin(a - 0.17) * (r + 3) + 3, Math.cos(a) * r, Math.sin(a) * r + 3); } g.closePath(); };
+    shadePath(g, fan, 0, 0, 20, p.base, p.dark, p.light);
+    g.shadowColor = "transparent";
+    for (let i = 1; i < 8; i++) { const a = Math.PI + 0.15 + (i * (Math.PI - 0.3)) / 8; const gr = g.createLinearGradient(0, 14, Math.cos(a) * 18, Math.sin(a) * 18); gr.addColorStop(0, "rgba(70,20,110,.1)"); gr.addColorStop(1, "rgba(70,20,110,.5)"); g.strokeStyle = gr; g.lineWidth = 1.8; g.beginPath(); g.moveTo(0, 13); g.lineTo(Math.cos(a) * 18, Math.sin(a) * 18 + 3); g.stroke(); }
+    shadeEllipse(g, 0, 15, 6, 3.5, p.base, p.dark, p.light);
+    gloss(g, -5, -8, 9, 4);
+    eye3d(g, -5, 1, 3.4); eye3d(g, 5, 1, 3.4); smile(g, 0, 6, 2.5, p.dark);
+  }
+  g.restore();
+}
+const SPRITE_PX = 120, spriteCache = {};
+function critterSprite(t) {
+  if (spriteCache[t]) return spriteCache[t];
+  const c = document.createElement("canvas"); c.width = c.height = SPRITE_PX;
+  const g = c.getContext("2d"); g.translate(SPRITE_PX / 2, SPRITE_PX / 2); g.scale(SPRITE_PX / 56, SPRITE_PX / 56);
+  paintCritter(g, t);
+  return (spriteCache[t] = c);
+}
+function drawCritter(g, t, x, y, s, sp, time = 0) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  if (sp === "b") { // bomb aura behind
+    const pulse = 0.75 + Math.sin(time * 8) * 0.25, gr = g.createRadialGradient(0, 0, 4, 0, 0, 26);
+    gr.addColorStop(0, `rgba(255,240,180,${0.9 * pulse})`); gr.addColorStop(0.6, `rgba(255,140,40,${0.5 * pulse})`); gr.addColorStop(1, "rgba(255,80,0,0)");
+    g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 26, 0, 7); g.fill();
+  }
+  if (sp !== "c") g.drawImage(critterSprite(t), -28, -28, 56, 56);
+  if (sp === "h" || sp === "v") {
+    g.save(); g.shadowColor = "rgba(255,255,255,.95)"; g.shadowBlur = 8; g.strokeStyle = "rgba(255,255,255,.95)"; g.lineWidth = 2.6; g.lineCap = "round";
+    const o = Math.sin(time * 6) * 2;
+    for (let i = -1; i <= 1; i++) { g.beginPath(); if (sp === "h") { g.moveTo(-20, i * 8 + o); g.bezierCurveTo(-7, i * 8 - 5 + o, 7, i * 8 + 5 + o, 20, i * 8 + o); } else { g.moveTo(i * 8 + o, -20); g.bezierCurveTo(i * 8 - 5 + o, -7, i * 8 + 5 + o, 7, i * 8 + o, 20); } g.stroke(); }
+    g.restore();
+  }
+  if (sp === "b") {
+    g.fillStyle = "#fff"; for (let i = 0; i < 4; i++) { const a = time * 3 + (i * Math.PI) / 2; const sx = Math.cos(a) * 22, sy = Math.sin(a) * 22; g.save(); g.translate(sx, sy); g.rotate(a); g.beginPath(); g.moveTo(0, -4); g.lineTo(1.2, -1.2); g.lineTo(4, 0); g.lineTo(1.2, 1.2); g.lineTo(0, 4); g.lineTo(-1.2, 1.2); g.lineTo(-4, 0); g.lineTo(-1.2, -1.2); g.fill(); g.restore(); }
+  }
+  if (sp === "c") { // iridescent pearl
+    g.shadowColor = "rgba(0,20,40,.45)"; g.shadowBlur = 6; g.shadowOffsetY = 4;
+    shadeEllipse(g, 0, 0, 18, 18, "#e8eefc", "#8e9ac7", "#ffffff");
+    g.shadowColor = "transparent";
+    if (g.createConicGradient) { const cg = g.createConicGradient(time * 2, 0, 0); ["#ff9aa2", "#ffdac1", "#e2f0cb", "#b5ead7", "#c7ceea", "#ff9aa2"].forEach((c, i) => cg.addColorStop(i / 5, c)); g.globalAlpha = 0.45; g.fillStyle = cg; g.beginPath(); g.arc(0, 0, 18, 0, 7); g.fill(); g.globalAlpha = 1; }
+    gloss(g, -5, -7, 8, 5, 0.85);
+    g.strokeStyle = `hsla(${(time * 200) % 360},90%,75%,.9)`; g.lineWidth = 2.5; g.beginPath(); g.arc(0, 0, 21, 0, 7); g.stroke();
+  }
+  g.restore();
+}
+function drawCritterOld(g, t, x, y, s, sp, time = 0) {
+  g.save(); g.translate(x, y); g.scale(s, s);
+  if (sp === "c") { // Pearl — clears a whole color
+    const gr = g.createRadialGradient(-6, -8, 2, 0, 0, 20); gr.addColorStop(0, "#fff"); gr.addColorStop(0.6, "#e0f2ff"); gr.addColorStop(1, "#9ec9ff");
+    g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 18, 0, 7); g.fill();
+    g.strokeStyle = `hsl(${(time * 200) % 360},90%,70%)`; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 20, 0, 7); g.stroke();
+    g.restore(); return;
+  }
+  const k = COLORS[t]; g.fillStyle = k.c; g.strokeStyle = k.d; g.lineWidth = 2.5;
+  const eyes = (ey = -3, sp2 = 6) => { g.fillStyle = "#fff"; g.beginPath(); g.arc(-sp2, ey, 4.5, 0, 7); g.arc(sp2, ey, 4.5, 0, 7); g.fill(); g.fillStyle = "#111"; g.beginPath(); g.arc(-sp2 + 1, ey + 1, 2.2, 0, 7); g.arc(sp2 + 1, ey + 1, 2.2, 0, 7); g.fill(); };
+  if (t === 0) { // crab
+    g.beginPath(); g.ellipse(0, 3, 16, 12, 0, 0, 7); g.fill(); g.stroke();
+    g.beginPath(); g.arc(-17, -8, 6, 0, 7); g.arc(17, -8, 6, 0, 7); g.fill(); g.stroke(); eyes(-1);
+  } else if (t === 1) { // fish
+    g.beginPath(); g.moveTo(10, 0); g.lineTo(20, -10); g.lineTo(20, 10); g.closePath(); g.fill(); g.stroke();
+    g.beginPath(); g.ellipse(-2, 0, 15, 12, 0, 0, 7); g.fill(); g.stroke();
+    g.fillStyle = "#fff"; g.beginPath(); g.arc(-8, -3, 4.5, 0, 7); g.fill(); g.fillStyle = "#111"; g.beginPath(); g.arc(-8, -2, 2.2, 0, 7); g.fill();
+  } else if (t === 2) { // starfish
+    g.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + (i * Math.PI) / 5, r = i % 2 ? 8 : 19; g.lineTo(Math.cos(a) * r, Math.sin(a) * r); } g.closePath(); g.fill(); g.stroke(); eyes(-1, 4);
+  } else if (t === 3) { // turtle
+    g.beginPath(); g.arc(0, -14, 6, 0, 7); g.fill(); g.stroke();
+    g.beginPath(); for (let i = 0; i < 6; i++) { const a = (i * Math.PI) / 3; g.lineTo(Math.cos(a) * 16, Math.sin(a) * 14 + 3); } g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = k.d; g.beginPath(); g.arc(0, 3, 6, 0, 7); g.fill(); g.fillStyle = "#fff"; g.beginPath(); g.arc(-2, -15, 2, 0, 7); g.arc(2, -15, 2, 0, 7); g.fill();
+  } else if (t === 4) { // jellyfish
+    g.beginPath(); g.arc(0, -2, 15, Math.PI, 0); g.lineTo(15, 4); g.lineTo(-15, 4); g.closePath(); g.fill(); g.stroke();
+    g.lineWidth = 3; for (let i = -2; i <= 2; i++) { g.beginPath(); g.moveTo(i * 6, 4); g.quadraticCurveTo(i * 6 + Math.sin(time * 5 + i) * 4, 12, i * 6, 19); g.stroke(); } eyes(-4, 5);
+  } else { // shell
+    g.beginPath(); g.moveTo(0, 14); for (let i = 0; i <= 8; i++) { const a = Math.PI + (i * Math.PI) / 8; g.quadraticCurveTo(Math.cos(a - 0.2) * 22, Math.sin(a - 0.2) * 22, Math.cos(a) * 18, Math.sin(a) * 18 + 2); } g.closePath(); g.fill(); g.stroke();
+    g.strokeStyle = k.d; for (let i = 1; i < 8; i++) { const a = Math.PI + (i * Math.PI) / 8; g.beginPath(); g.moveTo(0, 12); g.lineTo(Math.cos(a) * 15, Math.sin(a) * 15 + 2); g.stroke(); }
+  }
+  if (sp === "h" || sp === "v") { // wave stripes
+    g.strokeStyle = "rgba(255,255,255,.95)"; g.lineWidth = 3;
+    for (let i = -1; i <= 1; i++) { g.beginPath(); if (sp === "h") { g.moveTo(-18, i * 7); g.bezierCurveTo(-6, i * 7 - 4, 6, i * 7 + 4, 18, i * 7); } else { g.moveTo(i * 7, -18); g.bezierCurveTo(i * 7 - 4, -6, i * 7 + 4, 6, i * 7, 18); } g.stroke(); }
+  }
+  if (sp === "b") { g.strokeStyle = `rgba(255,255,255,${0.6 + Math.sin(time * 8) * 0.3})`; g.lineWidth = 4; g.beginPath(); g.arc(0, 0, 21, 0, 7); g.stroke(); g.fillStyle = "#fff"; g.font = "900 12px sans-serif"; g.textAlign = "center"; g.fillText("💥", 0, 22); }
+  g.restore();
+}
+
+// ------------------------------------------------------------- LEVELS
+const LEVEL_COUNT = 60;
+const ZONES = ["🐚 Bãi Cát Nông", "🪸 Rạn San Hô", "🌊 Hang Sâu", "🦑 Vực Thẳm", "🏝️ Đảo Báu", "🌋 Núi Lửa Ngầm"];
+function mulberry(a) { return () => { a |= 0; a = (a + 0x6d2b79f5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function levelDef(n) {
+  const r = mulberry(n * 7919 + 13);
+  const k = Math.max(4, Math.min(6, (n < 4 ? 4 : n < 18 ? 5 : 6) + D().colors));
+  const types = ["score", "collect", "ice", "score", "ice", "collect"];
+  const goal = n === 0 ? "score" : types[n % types.length];
+  const L = { n, rows: 8, cols: 8, colors: k, goal, moves: Math.max(12, 26 - Math.floor(n / 5)) + D().moves,
+    holes: [], ice: [], stones: [], base: 1200 + n * 220 };
+  if (n >= 10 && n % 4 === 2) L.holes = [[0, 0], [0, 7], [7, 0], [7, 7]];
+  if (n >= 25 && n % 5 === 0) L.holes.push([3, 3], [3, 4], [4, 3], [4, 4]);
+  const free = []; for (let rr = 0; rr < 8; rr++) for (let cc = 0; cc < 8; cc++) if (!L.holes.some(([a, b]) => a === rr && b === cc)) free.push([rr, cc]);
+  const pick = (cnt, fromRow = 0) => { const out = []; const pool = free.filter(([a]) => a >= fromRow); for (let i = 0; i < cnt && pool.length; i++) out.push(pool.splice(Math.floor(r() * pool.length), 1)[0]); return out; };
+  if (goal === "ice") { const cnt = Math.min(40, 8 + Math.floor(n * 0.7)); L.ice = pick(cnt, 2).map(([a, b]) => [a, b, n > 15 && r() < 0.35 ? 2 : 1]); }
+  if (n >= 7) { const used = new Set(L.ice.map(([a, b]) => a * 8 + b)); L.stones = pick(Math.min(12, 2 + Math.floor(n / 6)), 3).filter(([a, b]) => !used.has(a * 8 + b)); }
+  if (goal === "collect") { L.collectColor = Math.floor(r() * k); L.collectNeed = 14 + Math.floor(n * 0.8); }
+  if (goal === "score") L.target = L.base;
+  L.stars = [L.base * 0.6, L.base * 1.1, L.base * 1.7].map(Math.round);
+  if (goal === "score") L.stars = [L.base, Math.round(L.base * 1.5), Math.round(L.base * 2.1)];
+  return L;
+}
+
+// ------------------------------------------------------------- BOARD STATE
+const CELL = 48, BX = (W - CELL * 8) / 2, BY = 190;
+let L, grid, ice, stone, hole, score, movesLeft, collected, busy, chain, selected, hintT, hintMove, particles, floaters, shakeAmt, time = 0, boostMode = null, adMovesUsed;
+const inB = (r, c) => r >= 0 && r < L.rows && c >= 0 && c < L.cols;
+const playable = (r, c) => inB(r, c) && !hole[r][c] && !stone[r][c];
+const newPiece = (r, c, t) => ({ t, sp: null, x: c, y: r, s: 1, a: 1, vy: 0 });
+const rndColor = () => Math.floor(Math.random() * L.colors);
+
+function buildBoard(def) {
+  L = def; grid = []; ice = []; stone = []; hole = [];
+  for (let r = 0; r < 8; r++) { grid.push(Array(8).fill(null)); ice.push(Array(8).fill(0)); stone.push(Array(8).fill(0)); hole.push(Array(8).fill(false)); }
+  for (const [r, c] of def.holes) hole[r][c] = true;
+  for (const [r, c, v] of def.ice) ice[r][c] = v;
+  for (const [r, c] of def.stones) stone[r][c] = 1;
+  do {
+    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+      if (!playable(r, c)) { grid[r][c] = null; continue; }
+      let t; do { t = rndColor(); } while ((c >= 2 && grid[r][c - 1]?.t === t && grid[r][c - 2]?.t === t) || (r >= 2 && grid[r - 1][c]?.t === t && grid[r - 2][c]?.t === t));
+      grid[r][c] = newPiece(r - 8, c, t); // drop in from above
+    }
+  } while (!findMove());
+  score = 0; movesLeft = def.moves; collected = 0; busy = false; chain = 0; selected = null; hintT = 0; hintMove = null; particles = []; floaters = []; shakeAmt = 0; boostMode = null; adMovesUsed = false;
+}
+
+// ------------------------------------------------------------- MATCHING
+function runs() {
+  const out = [];
+  const same = (a, b) => a && b && a.sp !== "c" && b.sp !== "c" && a.t === b.t;
+  for (let r = 0; r < 8; r++) { let s = 0; for (let c = 1; c <= 8; c++) { if (c < 8 && same(grid[r][c], grid[r][s]) && playable(r, c)) continue; if (c - s >= 3 && grid[r][s]) out.push({ dir: "h", cells: Array.from({ length: c - s }, (_, i) => [r, s + i]) }); s = c; } }
+  for (let c = 0; c < 8; c++) { let s = 0; for (let r = 1; r <= 8; r++) { if (r < 8 && same(grid[r][c], grid[s][c]) && playable(r, c)) continue; if (r - s >= 3 && grid[s][c]) out.push({ dir: "v", cells: Array.from({ length: r - s }, (_, i) => [s + i, c]) }); s = r; } }
+  return out;
+}
+function groups(rs) {
+  const parent = rs.map((_, i) => i), find = (i) => (parent[i] === i ? i : (parent[i] = find(parent[i])));
+  const owner = new Map();
+  rs.forEach((run, i) => run.cells.forEach(([r, c]) => { const k = r * 8 + c; if (owner.has(k)) parent[find(i)] = find(owner.get(k)); else owner.set(k, i); }));
+  const gm = new Map(); rs.forEach((run, i) => { const root = find(i); if (!gm.has(root)) gm.set(root, []); gm.get(root).push(run); });
+  return [...gm.values()];
+}
+function findMove() {
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+    if (!grid[r][c]) continue;
+    if (grid[r][c].sp === "c") { for (const [dr, dc] of [[0, 1], [1, 0], [0, -1], [-1, 0]]) if (playable(r + dr, c + dc) && grid[r + dr][c + dc]) return [[r, c], [r + dr, c + dc]]; }
+    for (const [dr, dc] of [[0, 1], [1, 0]]) {
+      const r2 = r + dr, c2 = c + dc; if (!playable(r2, c2) || !grid[r2][c2]) continue;
+      if (grid[r][c].sp && grid[r2][c2].sp) return [[r, c], [r2, c2]];
+      swapCells(r, c, r2, c2); const ok = runs().length > 0; swapCells(r, c, r2, c2);
+      if (ok) return [[r, c], [r2, c2]];
+    }
+  }
+  return null;
+}
+function swapCells(r1, c1, r2, c2) { const t = grid[r1][c1]; grid[r1][c1] = grid[r2][c2]; grid[r2][c2] = t; }
+
+// ------------------------------------------------------------- ANIMATION HELPERS
+const sleep = (ms) => new Promise((res) => setTimeout(res, ms * (save.settings.fast ? 0.55 : 1)));
+function settled() { for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { const p = grid[r][c]; if (p && (Math.abs(p.x - c) > 0.01 || Math.abs(p.y - r) > 0.01)) return false; } return true; }
+async function waitSettle() { await sleep(30); while (!settled()) await sleep(16); }
+function burst(r, c, color, n = 8) { const x = BX + c * CELL + CELL / 2, y = BY + r * CELL + CELL / 2; for (let i = 0; i < n; i++) { const a = Math.random() * 6.28, s = 60 + Math.random() * 160; particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.5 + Math.random() * 0.4, c: color, r: 2 + Math.random() * 3 }); } }
+function floatText(x, y, text, color = "#fff", size = 22) { floaters.push({ x, y, text, color, size, life: 1 }); }
+
+// ------------------------------------------------------------- CORE RESOLUTION
+function effectCells(r, c, sp, t) {
+  const out = [];
+  if (sp === "h") for (let cc = 0; cc < 8; cc++) out.push([r, cc]);
+  if (sp === "v") for (let rr = 0; rr < 8; rr++) out.push([rr, c]);
+  if (sp === "b") for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) out.push([r + dr, c + dc]);
+  if (sp === "c") for (let rr = 0; rr < 8; rr++) for (let cc = 0; cc < 8; cc++) if (grid[rr][cc] && grid[rr][cc].t === t) out.push([rr, cc]);
+  return out.filter(([a, b]) => inB(a, b));
+}
+// Clear a set of cells (with chain-reaction of specials). keep: cells that become new specials.
+async function clearCells(cells, keep = new Map()) {
+  const toClear = new Map(); const queue = [...cells]; let fx = false;
+  while (queue.length) {
+    const [r, c] = queue.pop(); const k = r * 8 + c;
+    if (toClear.has(k) || !inB(r, c)) continue;
+    toClear.set(k, [r, c]);
+    const p = grid[r][c];
+    if (p && p.sp && !keep.has(k)) { fx = true; const color = p.sp === "c" ? (p.target ?? rndColor()) : p.t; queue.push(...effectCells(r, c, p.sp, color)); }
+  }
+  if (fx) { sfx.special(); shakeAmt = 6; vibrate(30); }
+  chain++; sfx.pop(chain);
+  const hitStones = new Set();
+  let popped = 0;
+  for (const [r, c] of toClear.values()) {
+    if (stone[r][c]) { hitStones.add(r * 8 + c); continue; }
+    const p = grid[r][c]; if (!p) continue;
+    if (ice[r][c] > 0) { ice[r][c]--; burst(r, c, "#e0fbfc", 6); }
+    for (const [dr, dc] of [[0, 1], [1, 0], [0, -1], [-1, 0]]) if (inB(r + dr, c + dc) && stone[r + dr][c + dc]) hitStones.add((r + dr) * 8 + c + dc);
+    if (keep.has(r * 8 + c)) continue;
+    if (L.goal === "collect" && p.t === L.collectColor && p.sp !== "c") collected++;
+    burst(r, c, p.sp === "c" ? "#fff" : COLORS[p.t].c);
+    p.dying = true; popped++;
+  }
+  for (const k of hitStones) { const r = Math.floor(k / 8), c = k % 8; if (stone[r][c]) { stone[r][c] = 0; burst(r, c, "#8d99ae", 12); } }
+  const pts = popped * 20 * chain; score += pts;
+  if (pts) { const any = [...toClear.values()][0]; floatText(BX + any[1] * CELL + CELL / 2, BY + any[0] * CELL, "+" + pts, "#ffe066"); }
+  await sleep(170);
+  for (const [r, c] of toClear.values()) if (grid[r][c]?.dying) grid[r][c] = null;
+  for (const [k, sp] of keep) { const r = Math.floor(k / 8), c = k % 8; if (grid[r][c]) { grid[r][c].sp = sp; grid[r][c].s = 1.4; if (sp === "c") grid[r][c].t = -1; } }
+}
+function gravity() {
+  for (let c = 0; c < 8; c++) {
+    const slots = []; for (let r = 7; r >= 0; r--) if (playable(r, c)) slots.push(r);
+    const pieces = slots.map((r) => grid[r][c]).filter(Boolean);
+    slots.forEach((r) => (grid[r][c] = null));
+    pieces.forEach((p, i) => (grid[slots[i]][c] = p));
+    let spawn = 0;
+    for (let i = pieces.length; i < slots.length; i++) { const r = slots[i]; spawn++; grid[r][c] = newPiece(-spawn, c, rndColor()); }
+  }
+}
+async function resolve(swapA, swapB) {
+  chain = 0;
+  for (;;) {
+    const rs = runs(); if (!rs.length) break;
+    const cells = []; const keep = new Map();
+    for (const g of groups(rs)) {
+      const all = new Map(); g.forEach((run) => run.cells.forEach(([r, c]) => all.set(r * 8 + c, [r, c])));
+      cells.push(...all.values());
+      const longest = Math.max(...g.map((run) => run.cells.length));
+      const hasH = g.some((x) => x.dir === "h"), hasV = g.some((x) => x.dir === "v");
+      let sp = null;
+      if (longest >= 5) sp = "c"; else if (hasH && hasV) sp = "b"; else if (longest === 4) sp = g[0].dir === "h" ? "h" : "v";
+      if (sp) {
+        let pivot = null;
+        for (const s of [swapA, swapB]) if (s && all.has(s[0] * 8 + s[1])) pivot = s;
+        if (!pivot && sp === "b") { const seen = new Map(); g.forEach((run) => run.cells.forEach(([r, c]) => seen.set(r * 8 + c, (seen.get(r * 8 + c) || 0) + 1))); for (const [k, v] of seen) if (v > 1) pivot = [Math.floor(k / 8), k % 8]; }
+        if (!pivot) { const arr = [...all.values()]; pivot = arr[Math.floor(arr.length / 2)]; }
+        const pk = pivot[0] * 8 + pivot[1];
+        if (!grid[pivot[0]][pivot[1]]?.sp) keep.set(pk, sp);
+      }
+    }
+    await clearCells(cells, keep);
+    gravity(); await waitSettle();
+    swapA = swapB = null;
+  }
+  if (chain >= 3) { const msg = chain >= 6 ? "TUYỆT ĐỈNH!" : chain >= 4 ? "XUẤT SẮC!" : "HAY LẮM!"; floatText(W / 2, BY + 150, msg, "#ffd166", 34); }
+  if (!findMove()) { floatText(W / 2, BY + 190, "Xáo trộn!", "#bde0fe", 26); await sleep(400); await shuffleBoard(); }
+}
+async function shuffleBoard() {
+  const cells = []; for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) if (grid[r][c] && !grid[r][c].sp) cells.push([r, c]);
+  let tries = 0;
+  do {
+    const ts = cells.map(([r, c]) => grid[r][c].t);
+    for (let i = ts.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [ts[i], ts[j]] = [ts[j], ts[i]]; }
+    cells.forEach(([r, c], i) => { grid[r][c].t = ts[i]; grid[r][c].s = 0.3; });
+    tries++;
+  } while ((runs().length || !findMove()) && tries < 50);
+  if (runs().length) await resolve();
+}
+
+async function trySwap(a, b) {
+  if (busy) return;
+  const [r1, c1] = a, [r2, c2] = b;
+  if (!playable(r2, c2) || !grid[r1][c1] || !grid[r2][c2]) return;
+  busy = true; hintT = 0; hintMove = null; sfx.swap();
+  const p1 = grid[r1][c1], p2 = grid[r2][c2];
+  swapCells(r1, c1, r2, c2); await waitSettle();
+  // Special combos
+  if (p1.sp === "c" || p2.sp === "c") {
+    movesLeft--; chain = 0;
+    const pearl = p1.sp === "c" ? p1 : p2, other = pearl === p1 ? p2 : p1;
+    const pr = pearl === p1 ? [r2, c2] : [r1, c1];
+    if (other.sp === "c") { const all = []; for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) all.push([r, c]); sfx.boom(); await clearCells(all); }
+    else {
+      pearl.target = other.t;
+      if (other.sp) { // turn every piece of that color into the same special, then fire
+        for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { const p = grid[r][c]; if (p && p.t === other.t && !p.sp) { p.sp = other.sp === "b" ? "b" : Math.random() < 0.5 ? "h" : "v"; p.s = 1.4; } }
+        await sleep(350);
+      }
+      await clearCells([pr]);
+    }
+    gravity(); await waitSettle(); await resolve(); return endTurn();
+  }
+  if (p1.sp && p2.sp) {
+    movesLeft--; chain = 0;
+    const cells = []; const add = (r, c, sp) => cells.push(...effectCells(r, c, sp));
+    const set = new Set([p1.sp, p2.sp]);
+    if (set.has("b") && set.size === 1) { for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++) if (inB(r2 + dr, c2 + dc)) cells.push([r2 + dr, c2 + dc]); sfx.boom(); }
+    else if (set.has("b")) { for (let d = -1; d <= 1; d++) { add(r2 + d, c2, "h"); add(r2, c2 + d, "v"); } }
+    else { add(r2, c2, "h"); add(r2, c2, "v"); }
+    p1.sp = p2.sp = null;
+    await clearCells(cells.filter(([a, b2]) => inB(a, b2)));
+    gravity(); await waitSettle(); await resolve(); return endTurn();
+  }
+  if (!runs().length) { sfx.bad(); swapCells(r1, c1, r2, c2); await waitSettle(); busy = false; return; }
+  movesLeft--;
+  await resolve([r2, c2], [r1, c1]);
+  endTurn();
+}
+
+function goalDone() {
+  if (L.goal === "score") return score >= L.target;
+  if (L.goal === "collect") return collected >= L.collectNeed;
+  if (L.goal === "ice") return ice.every((row) => row.every((v) => v === 0));
+}
+async function endTurn() {
+  if (goalDone()) {
+    // Bonus: remaining moves become random specials and fire (classic "sweet finish", original visuals)
+    while (movesLeft > 0) {
+      const cand = []; for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) if (grid[r][c] && !grid[r][c].sp) cand.push([r, c]);
+      if (!cand.length) break;
+      const [r, c] = cand[Math.floor(Math.random() * cand.length)];
+      grid[r][c].sp = Math.random() < 0.5 ? "h" : "v"; movesLeft--; score += 100; floatText(BX + c * CELL + 24, BY + r * CELL, "+100", "#fff");
+      await sleep(120); chain = 0; await clearCells([[r, c]]); gravity(); await waitSettle();
+    }
+    await resolve(); busy = false; return win();
+  }
+  busy = false;
+  if (movesLeft <= 0) lose();
+}
+
+// ------------------------------------------------------------- INPUT
+let down = null;
+function cellAt(e) { const rect = cv.getBoundingClientRect(); const x = (e.clientX - rect.left) / scale, y = (e.clientY - rect.top) / scale; return [Math.floor((y - BY) / CELL), Math.floor((x - BX) / CELL), x, y]; }
+cv.addEventListener("pointerdown", (e) => {
+  audio(); if (scr !== "game" || busy) return;
+  const [r, c, x, y] = cellAt(e); if (!playable(r, c) || !grid[r][c]) { selected = null; return; }
+  if (boostMode === "hammer") { useHammer(r, c); return; }
+  if (selected && Math.abs(selected[0] - r) + Math.abs(selected[1] - c) === 1) { const s = selected; selected = null; trySwap(s, [r, c]); return; }
+  selected = [r, c]; down = { r, c, x, y };
+});
+cv.addEventListener("pointermove", (e) => {
+  if (!down || busy) return;
+  const [, , x, y] = cellAt(e); const dx = x - down.x, dy = y - down.y;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) > CELL * 0.4) {
+    const dir = Math.abs(dx) > Math.abs(dy) ? [0, Math.sign(dx)] : [Math.sign(dy), 0];
+    const a = [down.r, down.c]; down = null; selected = null; trySwap(a, [a[0] + dir[0], a[1] + dir[1]]);
+  }
+});
+addEventListener("pointerup", () => (down = null));
+
+async function useHammer(r, c) {
+  boostMode = null; updateBar();
+  if (save.items.hammer < 1) return;
+  save.items.hammer--; persist(); busy = true; sfx.boom(); shakeAmt = 5;
+  chain = 0; await clearCells([[r, c]]); gravity(); await waitSettle(); await resolve(); endTurn();
+}
+document.getElementById("bHammer").onclick = () => { if (busy) return; if (save.items.hammer < 1) return toast("Hết búa – mua trong Cửa hàng"); boostMode = boostMode === "hammer" ? null : "hammer"; updateBar(); if (boostMode) toast("Chạm 1 ô để đập"); };
+document.getElementById("bShuffle").onclick = async () => { if (busy) return; if (save.items.shuffle < 1) return toast("Hết lượt xáo – mua trong Cửa hàng"); save.items.shuffle--; persist(); busy = true; await shuffleBoard(); busy = false; updateBar(); };
+document.getElementById("bSet").onclick = () => { if (!busy) show("settings"); };
+document.getElementById("bPause").onclick = () => { if (busy) return; if (confirm("Thoát màn? (Mất 1 tim)")) show("map"); };
+function updateBar() {
+  document.getElementById("cHammer").textContent = save.items.hammer;
+  document.getElementById("cShuffle").textContent = save.items.shuffle;
+  document.getElementById("bHammer").classList.toggle("on", boostMode === "hammer");
+}
+
+// ------------------------------------------------------------- UPDATE & DRAW
+function update(dt) {
+  time += dt;
+  if (save.settings.fast) dt *= 1.7;
+  if (!grid) return;
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+    const p = grid[r][c]; if (!p) continue;
+    // horizontal: ease; vertical: gravity fall
+    p.x += (c - p.x) * Math.min(1, dt * 18);
+    if (p.y < r) { p.vy += 40 * dt; p.y = Math.min(r, p.y + p.vy * dt); if (p.y >= r) { p.vy = 0; p.s = 0.85; } }
+    else { p.y += (r - p.y) * Math.min(1, dt * 18); p.vy = 0; }
+    p.s += (1 - p.s) * Math.min(1, dt * 10);
+    if (p.dying) p.s *= 0.8;
+  }
+  for (const p of particles) { p.vy += 300 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }
+  particles = particles.filter((p) => p.life > 0);
+  for (const f of floaters) { f.y -= 40 * dt; f.life -= dt * 0.9; }
+  floaters = floaters.filter((f) => f.life > 0);
+  shakeAmt *= 0.9;
+  if (scr === "game" && !busy && save.settings.hint) { hintT += dt; if (hintT > 6 && !hintMove) hintMove = findMove(); }
+}
+function rr(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+function txt(s, x, y, size, color = "#fff", align = "center") { ctx.font = `900 ${size}px "Trebuchet MS", sans-serif`; ctx.textAlign = align; ctx.textBaseline = "middle"; ctx.lineWidth = size / 6; ctx.strokeStyle = "rgba(0,0,0,.4)"; ctx.strokeText(s, x, y); ctx.fillStyle = color; ctx.fillText(s, x, y); }
+function drawBg() {
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, "#0a4f7a"); g.addColorStop(1, "#032140"); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "rgba(255,255,255,.07)";
+  for (let i = 0; i < 6; i++) { ctx.beginPath(); ctx.moveTo(40 + i * 80 + Math.sin(time * 0.5 + i) * 20, 0); ctx.lineTo(80 + i * 80, 0); ctx.lineTo(10 + i * 80 + Math.sin(time * 0.5 + i) * 30, H); ctx.lineTo(-20 + i * 80, H); ctx.fill(); }
+  for (let i = 0; i < 25; i++) { const x = (i * 71) % W, y = H - ((time * (20 + (i % 5) * 10) + i * 97) % H); ctx.strokeStyle = "rgba(255,255,255,.25)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x + Math.sin(time + i) * 6, y, 2 + (i % 4), 0, 7); ctx.stroke(); }
+}
+function draw() {
+  drawBg();
+  if (!grid) return;
+  ctx.save();
+  if (shakeAmt > 0.3) ctx.translate((Math.random() - 0.5) * shakeAmt, (Math.random() - 0.5) * shakeAmt);
+  // board frame
+  ctx.save(); ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = 18; ctx.shadowOffsetY = 6;
+  ctx.fillStyle = "rgba(4,40,80,.75)"; rr(BX - 8, BY - 8, CELL * 8 + 16, CELL * 8 + 16, 18); ctx.fill(); ctx.restore();
+  ctx.strokeStyle = "rgba(160,220,255,.35)"; ctx.lineWidth = 2; rr(BX - 8, BY - 8, CELL * 8 + 16, CELL * 8 + 16, 18); ctx.stroke();
+  // board tiles (beveled glass)
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+    if (hole[r][c]) continue;
+    const x = BX + c * CELL, y = BY + r * CELL;
+    const tg = ctx.createLinearGradient(x, y, x, y + CELL);
+    tg.addColorStop(0, (r + c) % 2 ? "rgba(140,210,255,.30)" : "rgba(120,190,240,.22)"); tg.addColorStop(1, (r + c) % 2 ? "rgba(40,110,170,.30)" : "rgba(30,90,150,.25)");
+    ctx.fillStyle = tg; rr(x + 1.5, y + 1.5, CELL - 3, CELL - 3, 9); ctx.fill();
+    ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.lineWidth = 1; ctx.stroke();
+    if (ice[r][c]) {
+      const ig = ctx.createLinearGradient(x, y, x + CELL, y + CELL);
+      ig.addColorStop(0, ice[r][c] > 1 ? "rgba(235,250,255,.95)" : "rgba(225,248,255,.75)"); ig.addColorStop(1, ice[r][c] > 1 ? "rgba(140,210,240,.9)" : "rgba(150,215,245,.55)");
+      ctx.fillStyle = ig; rr(x + 2.5, y + 2.5, CELL - 5, CELL - 5, 9); ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,.95)"; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = "rgba(255,255,255,.8)"; ctx.beginPath(); ctx.moveTo(x + 8, y + 8); ctx.lineTo(x + 20, y + 8); ctx.lineTo(x + 8, y + 20); ctx.fill();
+      if (ice[r][c] > 1) { ctx.strokeStyle = "rgba(90,160,200,.8)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x + 30, y + 10); ctx.lineTo(x + 24, y + 24); ctx.lineTo(x + 36, y + 32); ctx.moveTo(x + 24, y + 24); ctx.lineTo(x + 14, y + 36); ctx.stroke(); }
+    }
+    if (stone[r][c]) {
+      ctx.save(); ctx.shadowColor = "rgba(0,0,0,.5)"; ctx.shadowBlur = 5; ctx.shadowOffsetY = 3;
+      const sg = ctx.createRadialGradient(x + 16, y + 14, 3, x + CELL / 2, y + CELL / 2, CELL * 0.6);
+      sg.addColorStop(0, "#c9ced6"); sg.addColorStop(0.5, "#7d8597"); sg.addColorStop(1, "#3d4350");
+      ctx.fillStyle = sg; ctx.beginPath(); ctx.moveTo(x + 8, y + 14); ctx.lineTo(x + 20, y + 5); ctx.lineTo(x + 36, y + 7); ctx.lineTo(x + 44, y + 22); ctx.lineTo(x + 40, y + 40); ctx.lineTo(x + 22, y + 44); ctx.lineTo(x + 6, y + 34); ctx.closePath(); ctx.fill(); ctx.restore();
+      ctx.strokeStyle = "rgba(30,30,40,.6)"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(x + 18, y + 12); ctx.lineTo(x + 24, y + 24); ctx.lineTo(x + 20, y + 36); ctx.moveTo(x + 24, y + 24); ctx.lineTo(x + 34, y + 28); ctx.stroke();
+      gloss(ctx, x + 18, y + 13, 8, 3.5, 0.5);
+    }
+  }
+  // pieces
+  for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+    const p = grid[r][c]; if (!p) continue;
+    let x = BX + p.x * CELL + CELL / 2, y = BY + p.y * CELL + CELL / 2;
+    if (y < BY - CELL / 2) continue;
+    let s = p.s;
+    if (selected && selected[0] === r && selected[1] === c) s *= 1.12 + Math.sin(time * 10) * 0.04;
+    if (hintMove && hintMove.some(([a, b]) => a === r && b === c)) x += Math.sin(time * 14) * 3;
+    drawCritter(ctx, p.t, x, y, s, p.sp, time);
+  }
+  // mask pieces dropping above board
+  ctx.restore();
+  for (const p of particles) { ctx.globalAlpha = Math.max(0, p.life * 1.5); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill(); }
+  ctx.globalAlpha = 1;
+  for (const f of floaters) { ctx.globalAlpha = Math.max(0, f.life); txt(f.text, f.x, f.y, f.size, f.color); }
+  ctx.globalAlpha = 1;
+  // HUD
+  ctx.fillStyle = "rgba(0,0,0,.3)"; rr(14, 14, W - 28, 150, 20); ctx.fill();
+  txt(`MÀN ${L.n + 1}`, 30, 38, 18, "#bde0fe", "left");
+  txt(`${movesLeft}`, W - 52, 74, 44, movesLeft <= 5 ? "#ef476f" : "#fff");
+  txt("LƯỢT", W - 52, 106, 14, "#bde0fe");
+  // goal
+  if (L.goal === "score") { txt(`🎯 ${score}/${L.target}`, 30, 78, 24, "#fff", "left"); }
+  if (L.goal === "collect") { drawCritter(ctx, L.collectColor, 50, 80, 0.9, null, time); txt(`${Math.min(collected, L.collectNeed)}/${L.collectNeed}`, 80, 80, 26, "#fff", "left"); }
+  if (L.goal === "ice") { const left = ice.flat().filter((v) => v > 0).length; ctx.fillStyle = "rgba(190,240,255,.7)"; rr(34, 64, 32, 32, 6); ctx.fill(); txt(`còn ${left}`, 80, 80, 26, "#fff", "left"); }
+  txt(`Điểm: ${score}`, 30, 116, 16, "#ffe066", "left");
+  // star bar
+  const max = L.stars[2] * 1.05, bw = W - 150; ctx.fillStyle = "rgba(255,255,255,.2)"; rr(30, 136, bw, 10, 5); ctx.fill();
+  ctx.fillStyle = "#ffd166"; rr(30, 136, bw * Math.min(1, score / max), 10, 5); ctx.fill();
+  L.stars.forEach((s, i) => txt(score >= s ? "★" : "☆", 30 + bw * (s / max), 141, 18, "#ffd166"));
+}
+let last = performance.now();
+function loop(now) { const dt = Math.min(0.033, (now - last) / 1000); last = now; update(dt); draw(); requestAnimationFrame(loop); }
+requestAnimationFrame(loop);
+
+// ------------------------------------------------------------- ITEMS / IAP / ADS
+const ITEMS = [
+  { id: "moves3", name: "+3 Lượt", icon: "➕", info: "Bắt đầu màn với thêm 3 lượt", price: 60, pre: true },
+  { id: "startBomb", name: "Bom Mở Màn", icon: "💥", info: "Bắt đầu với 2 viên bom", price: 80, pre: true },
+  { id: "hammer", name: "Búa", icon: "🔨", info: "Đập vỡ 1 ô bất kỳ trong màn", price: 70 },
+  { id: "shuffle", name: "Xáo Trộn", icon: "🔄", info: "Xáo lại toàn bộ bàn", price: 40 },
+];
+const IAP_PRODUCTS = [
+  { id: "pearls_500", type: "consumable", name: "Túi Ngọc", icon: "⚪", info: "+500 ngọc trai", grant: () => (save.pearls += 500), fallbackPrice: "22.000đ" },
+  { id: "pearls_3000", type: "consumable", name: "Rương Ngọc", icon: "💎", info: "+3.000 ngọc (lời 40%)", grant: () => (save.pearls += 3000), fallbackPrice: "99.000đ" },
+  { id: "booster_bundle", type: "consumable", name: "Gói Trợ Giúp", icon: "🎁", info: "5 mỗi loại trợ giúp", grant: () => { for (const it of ITEMS) save.items[it.id] += 5; }, fallbackPrice: "49.000đ" },
+  { id: "remove_ads", type: "non-consumable", name: "Tắt Hẳn Quảng Cáo", icon: "🚫", info: "Không còn quảng cáo nào + nhận các phần thưởng QC miễn phí", grant: () => (save.noAds = true), fallbackPrice: "2 USD", hot: true },
+  { id: "starter_pack", type: "non-consumable", name: "Gói Khởi Đầu", icon: "⭐", info: "Xóa QC + 1.500 ngọc + đầy tim", grant: () => { save.noAds = true; save.pearls += 1500; save.lives = MAX_LIVES; }, fallbackPrice: "79.000đ" },
+];
+const IAP = {
+  store: null,
+  init() {
+    const C = window.CdvPurchase; if (!C) return;
+    const store = (this.store = C.store);
+    store.register(IAP_PRODUCTS.map((p) => ({ id: p.id, platform: C.Platform.GOOGLE_PLAY, type: p.type === "consumable" ? C.ProductType.CONSUMABLE : C.ProductType.NON_CONSUMABLE })));
+    store.when().approved((tx) => tx.verify()).verified((rc) => rc.finish()).finished((tx) => tx.products.forEach((p) => IAP.deliver(p.id))).productUpdated(() => { if (scr === "shop") renderShop(); });
+    store.initialize([C.Platform.GOOGLE_PLAY]).catch((e) => console.warn(e));
+  },
+  deliver(id) {
+    const p = IAP_PRODUCTS.find((x) => x.id === id); if (!p) return;
+    if (p.type === "non-consumable") { if (save["owned_" + id]) return; save["owned_" + id] = true; }
+    p.grant(); persist(); sfx.buy(); toast("Mua thành công: " + p.name); if (scr === "shop") renderShop();
+  },
+  price(id) { return this.store?.get(id)?.pricing?.price || IAP_PRODUCTS.find((x) => x.id === id).fallbackPrice; },
+  buy(id) {
+    if (!this.store) { if (confirm("(Chế độ thử trên trình duyệt) Giả lập mua " + id + "?")) this.deliver(id); return; }
+    const offer = this.store.get(id)?.getOffer(); if (!offer) return toast("Sản phẩm chưa sẵn sàng");
+    offer.order().then((err) => { if (err && err.code !== window.CdvPurchase.ErrorCode.PAYMENT_CANCELLED) toast("Lỗi thanh toán"); });
+  },
+  restore() { if (this.store) this.store.restorePurchases(); toast("Đang khôi phục..."); },
+};
+// TEST IDs — replace with your own AdMob unit IDs before publishing.
+const AD_IDS = { interstitial: "ca-app-pub-3940256099942544/1033173712", rewarded: "ca-app-pub-3940256099942544/5224354917" };
+const AD_TESTING = true;
+const AdMob = window.Capacitor?.isNativePlatform?.() ? window.Capacitor.Plugins.AdMob : null;
+let levelsSinceAd = 0;
+async function adsInit() { if (!AdMob) return; try { await AdMob.initialize({ initializeForTesting: AD_TESTING }); AdMob.prepareInterstitial({ adId: AD_IDS.interstitial, isTesting: AD_TESTING }).catch(() => {}); AdMob.prepareRewardVideoAd({ adId: AD_IDS.rewarded, isTesting: AD_TESTING }).catch(() => {}); } catch (e) {} }
+async function maybeInterstitial() { levelsSinceAd++; if (save.noAds || !AdMob || levelsSinceAd < 3) return; levelsSinceAd = 0; try { await AdMob.showInterstitial(); } catch (e) {} AdMob.prepareInterstitial({ adId: AD_IDS.interstitial, isTesting: AD_TESTING }).catch(() => {}); }
+async function showRewarded() { if (save.noAds) { toast("🎁 Miễn phí nhờ gói Không Quảng Cáo"); return true; } if (!AdMob) return confirm("(Trình duyệt) Giả lập đã xem quảng cáo?"); let ok = false; try { ok = !!(await AdMob.showRewardVideoAd()); } catch (e) { toast("Chưa có quảng cáo, thử lại sau"); } AdMob.prepareRewardVideoAd({ adId: AD_IDS.rewarded, isTesting: AD_TESTING }).catch(() => {}); return ok; }
+
+// ------------------------------------------------------------- SCREENS
+let scr = "menu", prevScr = "menu", curTab = "items", pendingLevel = 0, preBoost = {}, lastReward = 0;
+const SCREENS = { menu: "scrMenu", map: "scrMap", pre: "scrPre", win: "scrWin", lose: "scrLose", nolives: "scrNoLives", shop: "scrShop", settings: "scrSettings" };
+function show(name) {
+  if (name !== scr) prevScr = scr; scr = name;
+  Object.values(SCREENS).forEach((id) => document.getElementById(id).classList.remove("show"));
+  document.getElementById("gameBar").style.display = name === "game" ? "flex" : "none";
+  if (SCREENS[name]) document.getElementById(SCREENS[name]).classList.add("show");
+  adLabels();
+  if (name === "map") renderMap(); if (name === "shop") renderShop(); if (name === "settings") renderSettings(); if (name === "menu") drawMenuArt(); if (name === "game") updateBar();
+  refreshTop();
+}
+document.addEventListener("click", (e) => {
+  audio();
+  const go = e.target.closest("[data-go]")?.dataset.go; if (go) return show(go);
+  if (e.target.closest("[data-back]")) return show(["menu", "map"].includes(prevScr) ? prevScr : "menu");
+  const tab = e.target.closest("[data-tab]")?.dataset.tab; if (tab) { curTab = tab; document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("on", b.dataset.tab === tab)); renderShop(); }
+});
+
+function renderMap() {
+  const box = document.getElementById("mapList"); box.innerHTML = "";
+  for (let n = 0; n < LEVEL_COUNT; n++) {
+    if (n % 10 === 0) box.insertAdjacentHTML("beforeend", "");
+    const open = n <= save.unlocked, st = save.stars[n] || 0;
+    const b = document.createElement("button"); b.className = "node" + (open ? "" : " locked") + (n === save.unlocked ? " cur" : "");
+    b.style.marginLeft = Math.sin(n * 0.9) * 140 + "px";
+    b.innerHTML = open ? `${n + 1}<small>${"★".repeat(st)}${"☆".repeat(3 - st)}</small>` : "🔒";
+    if (open) b.onclick = () => openPre(n);
+    box.appendChild(b);
+    if (n % 10 === 9 || n === LEVEL_COUNT - 1) {} 
+    if (n % 10 === 0) { const z = document.createElement("div"); z.className = "zone"; z.textContent = ZONES[Math.floor(n / 10)]; box.insertBefore(z, b); }
+  }
+  setTimeout(() => { const cur = box.querySelector(".cur"); cur?.scrollIntoView({ block: "center" }); }, 30);
+}
+function goalText(d) {
+  if (d.goal === "score") return `Đạt <b>${d.target}</b> điểm`;
+  if (d.goal === "collect") return `Thu thập <b>${d.collectNeed}</b> ${COLORS[d.collectColor].name}`;
+  return `Phá hết <b>${d.ice.length}</b> ô băng`;
+}
+function openPre(n) {
+  tickLives();
+  if (save.lives < 1) { document.getElementById("nlInfo").textContent = `Tim tiếp theo sau ${lifeTimer()}`; return show("nolives"); }
+  pendingLevel = n; preBoost = {};
+  const d = levelDef(n);
+  document.getElementById("preTitle").textContent = `MÀN ${n + 1}`;
+  document.getElementById("preGoal").innerHTML = `${goalText(d)} trong <b>${d.moves}</b> lượt<br>Độ khó: ${D().icon} ${D().name} (ngọc x${D().reward})`;
+  renderPre(); show("pre");
+}
+function renderPre() {
+  const box = document.getElementById("preItems"); box.innerHTML = "";
+  ITEMS.filter((i) => i.pre).forEach((it) => {
+    const have = save.items[it.id], on = preBoost[it.id];
+    const d = document.createElement("div"); d.className = "card";
+    d.innerHTML = `<div style="font-size:34px">${it.icon}</div><div class="name">${it.name}</div><div class="info">${it.info}<br>Có: ${have}</div>`;
+    const b = document.createElement("button"); b.className = "btn small " + (on ? "yellow" : have ? "" : "gray");
+    b.textContent = on ? "✔ ĐÃ CHỌN" : have ? "DÙNG" : `⚪ ${it.price}`;
+    b.onclick = () => { if (on) preBoost[it.id] = false; else if (have) preBoost[it.id] = true; else if (save.pearls >= it.price) { save.pearls -= it.price; save.items[it.id]++; persist(); sfx.buy(); preBoost[it.id] = true; } else toast("Không đủ ngọc ⚪"); renderPre(); };
+    d.appendChild(b); box.appendChild(d);
+  });
+}
+document.getElementById("preStart").onclick = () => {
+  tickLives(); if (save.lives < 1) return show("nolives");
+  if (save.lives >= MAX_LIVES) save.lifeTs = Date.now();
+  save.lives--;
+  for (const k in preBoost) if (preBoost[k]) save.items[k]--;
+  persist();
+  buildBoard(levelDef(pendingLevel));
+  if (preBoost.moves3) movesLeft += 3;
+  if (preBoost.startBomb) { let placed = 0; for (let i = 0; i < 100 && placed < 2; i++) { const r = Math.floor(Math.random() * 8), c = Math.floor(Math.random() * 8); if (grid[r][c] && !grid[r][c].sp) { grid[r][c].sp = "b"; placed++; } } }
+  show("game");
+};
+function win() {
+  sfx.win(); vibrate([30, 30, 60]);
+  const stars = score >= L.stars[2] ? 3 : score >= L.stars[1] ? 2 : 1;
+  const prev = save.stars[L.n] || 0;
+  const reward = Math.round((20 + stars * 10 + Math.max(0, stars - prev) * 20) * D().reward);
+  save.stars[L.n] = Math.max(prev, stars); save.unlocked = Math.max(save.unlocked, Math.min(LEVEL_COUNT - 1, L.n + 1));
+  save.lives = Math.min(MAX_LIVES, save.lives + 1); // winning refunds the life
+  save.pearls += reward; lastReward = reward; persist();
+  document.getElementById("winStars").textContent = "★".repeat(stars) + "☆".repeat(3 - stars);
+  document.getElementById("winInfo").innerHTML = `Điểm: <b>${score}</b><br>⚪ +${reward} ngọc`;
+  document.getElementById("winDouble").style.display = "";
+  document.getElementById("winNext").style.display = L.n < LEVEL_COUNT - 1 ? "" : "none";
+  setTimeout(() => show("win"), 600);
+}
+function lose() {
+  sfx.lose();
+  document.getElementById("loseInfo").innerHTML = `Màn ${L.n + 1} • ${L.goal === "score" ? `${score}/${L.target} điểm` : L.goal === "collect" ? `${collected}/${L.collectNeed}` : `còn ${ice.flat().filter((v) => v).length} ô băng`}`;
+  document.getElementById("loseAd").style.display = adMovesUsed ? "none" : "";
+  setTimeout(() => show("lose"), 400);
+}
+document.getElementById("loseAd").onclick = async () => { if (await showRewarded()) { adMovesUsed = true; movesLeft += 5; show("game"); } };
+document.getElementById("loseBuy").onclick = () => { if (save.pearls < 90) return toast("Không đủ ngọc ⚪"); save.pearls -= 90; persist(); sfx.buy(); movesLeft += 5; show("game"); };
+document.getElementById("loseQuit").onclick = async () => { await maybeInterstitial(); show("map"); };
+document.getElementById("winDouble").onclick = async () => { if (await showRewarded()) { save.pearls += lastReward; persist(); toast(`⚪ +${lastReward} (x2)`); document.getElementById("winDouble").style.display = "none"; } };
+document.getElementById("winNext").onclick = async () => { await maybeInterstitial(); openPre(Math.min(LEVEL_COUNT - 1, L.n + 1)); };
+document.getElementById("nlAd").onclick = async () => { if (await showRewarded()) { save.lives = Math.min(MAX_LIVES, save.lives + 1); persist(); show("map"); } };
+document.getElementById("nlBuy").onclick = () => { if (save.pearls < 120) return toast("Không đủ ngọc ⚪"); save.pearls -= 120; save.lives = MAX_LIVES; persist(); sfx.buy(); show("map"); };
+
+function renderShop() {
+  const box = document.getElementById("shopGrid"); box.innerHTML = "";
+  if (curTab === "items") {
+    ITEMS.forEach((it) => {
+      const d = document.createElement("div"); d.className = "card";
+      d.innerHTML = `<div style="font-size:40px">${it.icon}</div><div class="name">${it.name}</div><div class="info">${it.info}<br>Có: <b>${save.items[it.id]}</b></div>`;
+      const b = document.createElement("button"); b.className = "btn small"; b.textContent = `⚪ ${it.price}`;
+      b.onclick = () => { if (save.pearls < it.price) return toast("Không đủ ngọc ⚪"); save.pearls -= it.price; save.items[it.id]++; persist(); sfx.buy(); renderShop(); };
+      d.appendChild(b); box.appendChild(d);
+    });
+    const d = document.createElement("div"); d.className = "card wide";
+    d.innerHTML = `<div><div class="name">❤️ Đầy Tim</div><div class="info">Hồi đầy ${MAX_LIVES} tim ngay</div></div>`;
+    const b = document.createElement("button"); b.className = "btn small"; b.textContent = "⚪ 120";
+    b.onclick = () => { if (save.pearls < 120) return toast("Không đủ ngọc ⚪"); save.pearls -= 120; save.lives = MAX_LIVES; persist(); sfx.buy(); };
+    d.appendChild(b); box.appendChild(d);
+  } else {
+    IAP_PRODUCTS.forEach((p) => {
+      const owned = p.type === "non-consumable" && save["owned_" + p.id];
+      const d = document.createElement("div"); d.className = "card wide";
+      if (p.hot && !owned) d.style.cssText = "background:linear-gradient(135deg,#ef476f,#ffb703);box-shadow:0 0 0 3px #fff3";
+      d.innerHTML = `<div><div class="name" style="font-size:18px">${p.icon} ${p.name}${p.hot && !owned ? " 🔥" : ""}</div><div class="info">${p.info}</div></div>`;
+      const b = document.createElement("button"); b.className = "btn small " + (owned ? "gray" : "pink"); b.textContent = owned ? "✔ ĐÃ MUA" : IAP.price(p.id);
+      if (!owned) b.onclick = () => IAP.buy(p.id);
+      d.appendChild(b); box.appendChild(d);
+    });
+    const r = document.createElement("button"); r.className = "btn small gray"; r.style.gridColumn = "1 / -1"; r.textContent = "Khôi phục giao dịch đã mua"; r.onclick = () => IAP.restore(); box.appendChild(r);
+  }
+}
+function renderSettings() {
+  const box = document.getElementById("setGrid"); box.innerHTML = ""; const st = save.settings;
+  const row = (label, sub, ctl) => { const d = document.createElement("div"); d.className = "card wide"; d.innerHTML = `<div><div class="name">${label}</div><div class="info" style="min-height:0">${sub}</div></div>`; d.appendChild(ctl); box.appendChild(d); };
+  const toggle = (k) => { const b = document.createElement("button"); b.className = "btn small " + (st[k] ? "" : "gray"); b.style.minWidth = "80px"; b.textContent = st[k] ? "BẬT" : "TẮT"; b.onclick = () => { st[k] = !st[k]; persist(); if (k === "sound") sfx.swap(); if (k === "music") (st.music ? music.start() : music.stop()); if (k === "vibrate") vibrate(40); renderSettings(); }; return b; };
+  row("🔊 Âm thanh", "Hiệu ứng âm thanh", toggle("sound"));
+  row("🎵 Nhạc nền", "Nhạc biển êm dịu", toggle("music"));
+  row("📳 Rung", "Rung khi nổ combo", toggle("vibrate"));
+  row("💡 Gợi ý nước đi", "Lắc nhẹ 2 ô có thể ghép sau 6 giây", toggle("hint"));
+  row("⚡ Hiệu ứng nhanh", "Rơi & nổ nhanh hơn", toggle("fast"));
+  const ads = document.createElement("button"); ads.className = "btn small " + (save.noAds ? "gray" : "pink"); ads.textContent = save.noAds ? "✔ ĐÃ TẮT" : IAP.price("remove_ads");
+  if (!save.noAds) ads.onclick = () => IAP.buy("remove_ads");
+  row("🚫 Tắt hẳn quảng cáo", "Mua 1 lần, dùng mãi mãi", ads);
+  const pv = document.createElement("button"); pv.className = "btn small gray"; pv.textContent = "Xem"; pv.onclick = () => window.open(PRIVACY_URL, "_blank");
+  row("🔒 Quyền riêng tư", "Chính sách quyền riêng tư", pv);
+  const dw = document.createElement("div"); dw.className = "card"; dw.innerHTML = `<div class="name">🎚️ Độ khó</div>`;
+  const seg = document.createElement("div"); seg.style.cssText = "display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;margin:6px 0";
+  Object.entries(DIFFS).forEach(([k, d]) => { const b = document.createElement("button"); b.className = "tab" + (st.diff === k ? " on" : ""); b.style.padding = "10px 2px"; b.innerHTML = `${d.icon}<br>${d.name}`; b.onclick = () => { st.diff = k; persist(); renderSettings(); }; seg.appendChild(b); });
+  dw.appendChild(seg);
+  const d = D(); dw.insertAdjacentHTML("beforeend", `<div class="info" style="width:100%;text-align:left">• Lượt đi: <b>${d.moves >= 0 ? "+" : ""}${d.moves}</b> mỗi màn • Loại sinh vật: <b>${d.colors >= 0 ? "+" : ""}${d.colors}</b><br>• Thưởng ngọc: <b>x${d.reward}</b> • Màn càng về sau càng ít lượt, nhiều đá & băng hơn</div>`);
+  box.appendChild(dw);
+  const rs = document.createElement("button"); rs.className = "btn small"; rs.textContent = "Khôi phục"; rs.onclick = () => IAP.restore(); row("💎 Mua hàng", "Lấy lại gói đã mua", rs);
+  const rst = document.createElement("button"); rst.className = "btn small pink"; rst.textContent = "XÓA"; rst.onclick = () => { if (confirm("Xóa tiến trình màn chơi? (giữ ngọc & vật phẩm)")) { save.stars = {}; save.unlocked = 0; persist(); toast("Đã xóa"); } };
+  row("🗑️ Chơi lại từ đầu", "Xóa tiến trình màn", rst);
+  box.insertAdjacentHTML("beforeend", `<div class="info" style="text-align:center;opacity:.6">Reef Pop v1.1</div>`);
+}
+function drawMenuArt() {
+  const g = document.getElementById("menuArt").getContext("2d"); g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 220, 200);
+  // Pengu the diver
+  g.save(); g.translate(110, 150); g.scale(1.6, 1.6);
+  g.fillStyle = "#ffa62b"; g.beginPath(); g.ellipse(-11, -3, 9, 5, 0, 0, 7); g.ellipse(11, -3, 9, 5, 0, 0, 7); g.fill();
+  g.fillStyle = "#2d3561"; g.beginPath(); g.ellipse(0, -30, 25, 30, 0, 0, 7); g.fill();
+  g.fillStyle = "#fdf6e3"; g.beginPath(); g.ellipse(0, -24, 17, 21, 0, 0, 7); g.fill();
+  g.fillStyle = "#ffa62b"; g.beginPath(); g.moveTo(-5, -34); g.lineTo(5, -34); g.lineTo(0, -27); g.fill();
+  g.fillStyle = "#ffd166"; g.fillRect(-26, -50, 52, 6);
+  g.fillStyle = "rgba(120,220,255,.7)"; g.strokeStyle = "#ffd166"; g.lineWidth = 3; g.beginPath(); g.roundRect(-20, -52, 40, 16, 8); g.fill(); g.stroke();
+  g.fillStyle = "#111"; g.beginPath(); g.arc(-8, -44, 3, 0, 7); g.arc(8, -44, 3, 0, 7); g.fill();
+  g.restore();
+  [[30, 50, 1], [190, 40, 4], [40, 150, 2], [185, 140, 0]].forEach(([x, y, t]) => drawCritter(g, t, x, y, 1));
+}
+
+document.getElementById("setBack").onclick = () => show(prevScr === "game" ? "game" : "menu");
+function adLabels() {
+  const free = save.noAds;
+  document.getElementById("loseAd").textContent = free ? "🎁 MIỄN PHÍ: +5 LƯỢT" : "▶ XEM QC: +5 LƯỢT";
+  document.getElementById("winDouble").textContent = free ? "🎁 MIỄN PHÍ: x2 NGỌC" : "▶ XEM QC: x2 NGỌC";
+  document.getElementById("nlAd").textContent = free ? "🎁 MIỄN PHÍ: +1 TIM" : "▶ XEM QC: +1 TIM";
+}
+const PRIVACY_URL = "https://example.com/reef-pop/privacy.html"; // TODO: your hosted privacy page
+
+// ------------------------------------------------------------- MUSIC (generative, no files)
+const music = {
+  timer: null, step: 0,
+  chords: [[220, 261.6, 329.6], [174.6, 220, 261.6], [261.6, 329.6, 392], [196, 246.9, 293.7]],
+  start() {
+    if (this.timer || !save.settings.music) return;
+    this.timer = setInterval(() => this.tick(), 400);
+  },
+  stop() { clearInterval(this.timer); this.timer = null; },
+  tick() {
+    if (!save.settings.music || !ac || document.hidden) return;
+    const ch = this.chords[Math.floor(this.step / 8) % 4];
+    if (this.step % 8 === 0) ch.forEach((f) => this.note(f / 2, 3.4, "sine", 0.025));
+    if (this.step % 2 === 0) this.note(ch[(this.step / 2) % 3] * 2, 0.6, "triangle", 0.018);
+    this.step++;
+  },
+  note(f, dur, type, vol) {
+    const a = ac, o = a.createOscillator(), g = a.createGain(), t0 = a.currentTime;
+    o.type = type; o.frequency.value = f;
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(vol, t0 + 0.08); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g).connect(a.destination); o.start(t0); o.stop(t0 + dur);
+  },
+};
+addEventListener("pointerdown", () => { audio(); music.start(); }, { once: false });
+
+// ------------------------------------------------------------- BOOT
+tickLives(); persist();
+document.addEventListener("deviceready", () => IAP.init(), false);
+if (!window.cordova) IAP.init();
+adsInit();
+show("menu");
+if (location.hash === "#demo") { buildBoard(levelDef(12)); grid[3][3].sp = "h"; grid[4][5].sp = "b"; grid[5][2].sp = "c"; grid[5][2].t = -1; for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) if (grid[r][c]) { grid[r][c].y = r; grid[r][c].x = c; } show("game"); }
+</script>
+
+<!-- Floating Monetization Bar injected by MoneyHunter247 -->
+<div style="position:fixed;bottom:12px;right:12px;z-index:999999;background:rgba(15,23,42,0.95);border:1px solid #10b981;border-radius:12px;padding:8px 14px;display:flex;align-items:center;gap:10px;font-family:system-ui,sans-serif;box-shadow:0 8px 25px rgba(0,0,0,0.5);">
+  <span style="color:#f8fafc;font-size:13px;font-weight:600;">⚡ Want this full source code?</span>
+  <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=xaductrung%40gmail.com&item_name=Commercial+Source+Code+License&amount=49&currency_code=USD&return=https%3A%2F%2Ffiles.catbox.moe%2Fytghdr.zip" target="_blank" style="background:#ffc439;color:#111827;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">💳 Buy Source ($49 PayPal)</a>
+  <a href="https://xaductrung-rgb.github.io" target="_blank" style="background:#10b981;color:#022c22;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">🛒 All Bundles</a>
+</div>
+</body>
+</html>

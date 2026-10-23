@@ -1,0 +1,1589 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Đấu Trường Sinh Tồn 3D - PUBG Mini Battle Royale</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    canvas {
+      display: block;
+      touch-action: none;
+      cursor: crosshair;
+    }
+  </style>
+</head>
+<body class="bg-transparent text-[var(--foreground)] antialiased p-1.5">
+  <div class="bg-[var(--card)] text-[var(--foreground)] border-2 border-[var(--border)] rounded-2xl overflow-hidden shadow-xl max-w-4xl mx-auto relative">
+    <!-- Thanh Công Cụ kiểu PUBG -->
+    <div class="flex flex-wrap items-center justify-between gap-1.5 px-3 py-1.5 border-b border-[var(--border)] bg-slate-900 text-white">
+      <div class="flex items-center gap-2">
+        <span class="text-lg">🪖🔫🪂</span>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-extrabold text-xs sm:text-sm text-amber-400 tracking-wide">PUBG 3D: CHẠY BO SĂN THÍNH</h1>
+            <span id="aliveBadge" class="px-2 py-0.5 rounded bg-rose-600 text-white font-extrabold text-xs">
+              CÒN SỐNG: 20/20
+            </span>
+          </div>
+          <p class="text-slate-400 text-xs">WASD: Di chuyển | Kéo Chuột / Phím ⬅️➡️: Xoay 3D | Click: Bắn | Phím F / Chuột Phải: Bật Scope 4x</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5 flex-wrap">
+        <span class="px-2 py-1 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40 font-extrabold text-xs">
+          🪙 <span id="goldText">200</span> BP
+        </span>
+        <button id="btnToggleCam" class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-sky-500 text-white hover:brightness-105">
+          🎥 Góc nhìn: TPS (Thứ 3)
+        </button>
+        <button id="btnScope" class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-emerald-600 text-white hover:brightness-105">
+          🎯 Scope 4x (Phím F)
+        </button>
+        <button id="btnOpenArmory" class="px-2.5 py-1 rounded-lg text-xs font-extrabold bg-amber-400 text-slate-950 hover:brightness-105">
+          🛒 Kho Vũ Khí & Skin
+        </button>
+        <button id="btnNewMatch" class="px-2 py-1 rounded-lg text-xs font-bold bg-slate-700 text-white hover:bg-slate-600">
+          🪂 Nhảy Dù Lại
+        </button>
+      </div>
+    </div>
+
+    <!-- Khu vực Canvas 3D -->
+    <div class="relative w-full" style="height: 415px;">
+      <canvas id="gameCanvas" class="w-full h-full"></canvas>
+
+      <!-- MODAL KHO VŨ KHÍ & TRANG PHỤC (ARMORY SHOP) -->
+      <div id="armoryModal" class="hidden absolute inset-0 bg-slate-950/85 backdrop-blur-sm z-20 flex items-center justify-center p-3">
+        <div class="bg-slate-900 text-white border-2 border-amber-400 rounded-2xl w-full max-w-2xl p-4 shadow-2xl max-h-full overflow-y-auto text-xs">
+          <div class="flex items-center justify-between border-b border-slate-700 pb-2 mb-3">
+            <div>
+              <h2 class="font-extrabold text-base text-amber-400">🛒 KHO VŨ KHÍ & TRANG PHỤC SINH TỒN</h2>
+              <p class="text-slate-400">Dùng điểm BP kiếm được khi hạ địch & ăn Top 1 để nâng cấp súng và mũ giáp!</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="px-3 py-1 rounded-full bg-amber-400 text-slate-950 font-extrabold">🪙 <span id="shopGoldText">200</span> BP</span>
+              <button id="btnCloseArmory" class="px-3 py-1 rounded-lg bg-rose-600 text-white font-bold">✖ Đóng</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div class="p-2.5 rounded-xl border border-slate-700 bg-slate-800 flex items-center justify-between">
+              <div>
+                <div class="font-extrabold text-sm text-amber-300">🎯 Súng Ngắm AWM + Đạn Magnum</div>
+                <div class="text-slate-400">Sát thương 110 (1 phát bay Mũ 3)</div>
+              </div>
+              <button onclick="buyArmory('awm', 120)" class="px-3 py-1.5 rounded-lg bg-amber-400 text-slate-950 font-extrabold shrink-0">
+                Trang bị (120 BP)
+              </button>
+            </div>
+
+            <div class="p-2.5 rounded-xl border border-slate-700 bg-slate-800 flex items-center justify-between">
+              <div>
+                <div class="font-extrabold text-sm text-emerald-400">🌿 Áo Ngụy Trang Cỏ (Ghillie Suit)</div>
+                <div class="text-slate-400">Kẻ địch khó phát hiện hơn + Tăng 25% Tốc chạy</div>
+              </div>
+              <button onclick="buyArmory('ghillie', 100)" class="px-3 py-1.5 rounded-lg bg-emerald-500 text-white font-extrabold shrink-0">
+                Mặc (100 BP)
+              </button>
+            </div>
+
+            <div class="p-2.5 rounded-xl border border-slate-700 bg-slate-800 flex items-center justify-between">
+              <div>
+                <div class="font-extrabold text-sm text-sky-400">🪖 Bộ Mũ 3 + Giáp 3 Khởi Đầu</div>
+                <div class="text-slate-400">Giảm 55% sát thương nhận vào + Đầy 100 Giáp</div>
+              </div>
+              <button onclick="buyArmory('armor3', 80)" class="px-3 py-1.5 rounded-lg bg-sky-500 text-white font-extrabold shrink-0">
+                Mua (80 BP)
+              </button>
+            </div>
+
+            <div class="p-2.5 rounded-xl border border-slate-700 bg-slate-800 flex items-center justify-between">
+              <div>
+                <div class="font-extrabold text-sm text-pink-400">🩹 +3 Túi Cứu Thương & Bò Húc</div>
+                <div class="text-slate-400">Bấm phím H hoặc nút Bơm Máu để hồi đầy HP</div>
+              </div>
+              <button onclick="buyArmory('medkit', 50)" class="px-3 py-1.5 rounded-lg bg-pink-500 text-white font-extrabold shrink-0">
+                Mua (50 BP)
+              </button>
+            </div>
+          </div>
+
+          <div id="armoryToast" class="mt-3 text-center font-bold text-emerald-400 h-4"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =====================================================
+    // HỆ THỐNG ÂM THANH SÚNG ĐẠN 3D (Web Audio API)
+    // =====================================================
+    class ShooterAudio {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      }
+      gunshot(kind = 'ar', volume = 0.25) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        // Tiếng nổ thuốc súng bằng White Noise +的低频 (Low punch)
+        const bufSize = this.ctx.sampleRate * (kind === 'sniper' ? 0.28 : 0.12);
+        const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufSize * 0.3));
+        }
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buf;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(kind === 'sniper' ? 1400 : 2200, now);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(volume, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + (kind === 'sniper' ? 0.27 : 0.11));
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start(now);
+      }
+      headshotDing() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(1150, now);
+        osc.frequency.exponentialRampToValueAtTime(1760, now + 0.14);
+        gain.gain.setValueAtTime(0.26, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.19);
+      }
+      chickenDinner() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        [523.25, 659.25, 783.99, 1046.50].forEach((f, idx) => {
+          const now = this.ctx.currentTime + idx * 0.09;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(f, now);
+          gain.gain.setValueAtTime(0.16, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.21);
+        });
+      }
+    }
+
+    const sfx = new ShooterAudio();
+
+    // =====================================================
+    // DANH SÁCH VŨ KHÍ CHUẨN PUBG
+    // =====================================================
+    const WEAPONS = {
+      m416: { id: 'm416', name: 'M416 Авто', dmg: 28, cooldown: 7, range: 650, spread: 0.025, color: '#38BDF8', sound: 'ar' },
+      akm:  { id: 'akm',  name: 'AKM Bắn Tỉa', dmg: 38, cooldown: 10, range: 620, spread: 0.04, color: '#F97316', sound: 'ar' },
+      s1897:{ id: 's1897',name: 'Shotgun S1897', dmg: 22, pellets: 5, cooldown: 22, range: 280, spread: 0.12, color: '#EF4444', sound: 'sniper' },
+      awm:  { id: 'awm',  name: 'AWM (Súng Thính)', dmg: 115, cooldown: 32, range: 950, spread: 0.004, color: '#FACC15', sound: 'sniper' }
+    };
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let W = 800;
+    let H = 415;
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      W = Math.max(320, Math.floor(rect.width));
+      H = Math.max(320, Math.floor(rect.height));
+      canvas.width = W;
+      canvas.height = H;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // =====================================================
+    // DỮ LIỆU THẾ GIỚI 3D (X, Z trên mặt đất, Y là độ cao)
+    // =====================================================
+    let bpCoins = 200;
+    let cameraMode = 'TPS'; // 'TPS' (Góc nhìn thứ 3) hoặc 'FPS' (Góc nhìn thứ nhất)
+    let isScoped = false;   // Ngắm Scope 4x
+    let matchState = 'PLAYING'; // 'PLAYING', 'VICTORY', 'DEFEAT'
+    let screenShake = 0;
+    let recoilKick = 0;
+    let hitMarkerTimer = 0;
+    let killFeed = [];
+    let popups = [];
+
+    // Vòng Bo Xanh (Blue Zone) thu hẹp dần về tâm
+    const zone = {
+      x: 0,
+      z: 0,
+      radius: 950,
+      minRadius: 160,
+      shrinkSpeed: 0.22
+    };
+
+    // Người chơi chính
+    const player = {
+      x: 0,
+      y: 0,
+      z: -120,
+      vx: 0,
+      vz: 0,
+      yaw: 0,        // Góc xoay ngang 360 độ (radian)
+      pitch: 0,      // Góc ngẩng/cúi
+      hp: 100,
+      maxHp: 100,
+      armor: 100,
+      helmetLv: 2,
+      vestLv: 2,
+      medkits: 2,
+      kills: 0,
+      weaponKey: 'm416',
+      shootTimer: 0,
+      legAnim: 0,
+      ghillie: false
+    };
+
+    let bots = [];
+    let obstacles3D = []; // Nhà cửa, Thùng gỗ, Đá, Cây cối trong không gian 3D
+    let lootCrates = [];  // Thùng Thính Airdrop 🪂 & Hộp Đồ
+    let bullets3D = [];   // Đường đạn 3D
+    let particles3D = []; // Khói đỏ Thính, Tia máu, Lửa đầu nòng
+
+    function initMatch() {
+      matchState = 'PLAYING';
+      isScoped = false;
+      zone.radius = 950;
+      bullets3D = [];
+      particles3D = [];
+      killFeed = [];
+      popups = [];
+
+      player.x = 0;
+      player.z = -180;
+      player.yaw = 0;
+      player.pitch = 0;
+      player.hp = 100;
+      player.armor = Math.max(player.armor, 60);
+      player.kills = 0;
+
+      // 1. Tạo địa hình 3D: Lô cốt, Nhà tường gạch, Thùng Hàng, Cây thông, Tảng đá
+      obstacles3D = [];
+      for (let i = 0; i < 42; i++) {
+        const ang = (i / 42) * Math.PI * 2 + (Math.random() - 0.5) * 0.2;
+        const dist = 90 + Math.random() * 720;
+        const ox = Math.cos(ang) * dist;
+        const oz = Math.sin(ang) * dist;
+        const typeRoll = Math.random();
+
+        if (typeRoll < 0.28) {
+          // Lô cốt / Tường nhà bắn tỉa
+          obstacles3D.push({ kind: 'wall', x: ox, z: oz, w: 48, h: 46, color: '#CBD5E1', roof: '#475569' });
+        } else if (typeRoll < 0.58) {
+          // Cây cối 3D
+          obstacles3D.push({ kind: 'tree', x: ox, z: oz, w: 32, h: 72, color: '#15803D', trunk: '#78350F' });
+        } else {
+          // Thùng gỗ Quân Sự / Tảng đá
+          obstacles3D.push({ kind: 'crate', x: ox, z: oz, w: 30, h: 30, color: '#D97706', border: '#78350F' });
+        }
+      }
+
+      // 2. Tạo 3 Thùng Thính Airdrop 🪂 tỏa khói đỏ rực chứa súng AWM & Giáp 3!
+      lootCrates = [];
+      for (let i = 0; i < 4; i++) {
+        const ang = (i / 4) * Math.PI * 2 + 0.4;
+        const dist = 140 + Math.random() * 340;
+        lootCrates.push({
+          x: Math.cos(ang) * dist,
+          z: Math.sin(ang) * dist,
+          type: i % 2 === 0 ? 'airdrop' : 'medbox',
+          taken: false
+        });
+      }
+
+      // 3. Tạo 19 Chiến Binh AI (Tổng 20 người sinh tồn trên đảo!)
+      bots = [];
+      const botNames = [
+        'Thánh_Sấy_M4', 'Cậu_Vàng_Cầm_AK', 'Bà_Hàng_Xóm_AWM', 'Sát_Thủ_Mũ_3',
+        'Ninja_Nấp_Cỏ', 'Vua_Chạy_Bo', 'Thánh_Nhặt_Thính', 'Pro_NoScope',
+        'Bé_Tập_Bắn', 'Gấu_Ngố_Cầm_Shotgun', 'Lão_Hạc_Săn_Top1', 'Trùm_Pochinki',
+        'Thánh_Lựu_Đạn', 'vịt_bựa_pubg', 'Sniper_Bình_Dương', 'RamBo_Quần_Đùi',
+        'Mèo_Béo_Mũ_Sắt', 'Xạ_Thủ_Mắt_Lác', 'Chúa_Tể_Vòng_Bo'
+      ];
+      for (let i = 0; i < 19; i++) {
+        const ang = (i / 19) * Math.PI * 2 + Math.random() * 0.3;
+        const dist = 170 + Math.random() * 580;
+        bots.push({
+          id: i + 1,
+          name: botNames[i % botNames.length],
+          x: Math.cos(ang) * dist,
+          z: Math.sin(ang) * dist,
+          vx: 0,
+          vz: 0,
+          yaw: Math.random() * Math.PI * 2,
+          hp: 90,
+          maxHp: 90,
+          helmetLv: Math.floor(1 + Math.random() * 3),
+          skinColor: ['#F97316', '#3B82F6', '#A855F7', '#10B981', '#EC4899'][i % 5],
+          shootCooldown: 40 + Math.floor(Math.random() * 60),
+          legAnim: Math.random() * 10,
+          hitFlash: 0
+        });
+      }
+
+      updateHUD();
+      addKillFeed('🪂 20 Chiến binh đã nhảy dù xuống Đảo Sinh Tồn! Chạy Bo ngay!');
+    }
+
+    function addKillFeed(msg) {
+      killFeed.unshift({ text: msg, life: 210 });
+      if (killFeed.length > 4) killFeed.pop();
+    }
+
+    function addPopup(text, color = '#FACC15') {
+      popups.push({ text, color, y: H * 0.34, life: 48 });
+    }
+
+    // =====================================================
+    // ĐIỀU KHIỂN BÀN PHÍM, CHUỘT & CẢM ỨNG ĐA ĐIỂM
+    // =====================================================
+    const keys = {};
+    let isDraggingLook = false;
+    let isFiringHold = false;
+    let lastPointerX = 0;
+    let lastPointerY = 0;
+
+    // Cần gạt Joystick ảo góc trái dưới cho Điện thoại / Máy tính bảng
+    const joy = {
+      active: false,
+      baseX: 82,
+      baseY: H - 78,
+      stickX: 82,
+      stickY: H - 78,
+      dx: 0,
+      dy: 0
+    };
+
+    window.addEventListener('keydown', (e) => {
+      keys[e.code] = true;
+      if (e.code === 'KeyF') toggleScope();
+      if (e.code === 'KeyV') toggleCameraMode();
+      if (e.code === 'KeyH') useMedkit();
+      if (e.code === 'Digit1') { player.weaponKey = 'm416'; addPopup('🔫 Đổi súng: M416 Auto'); }
+      if (e.code === 'Digit2') { player.weaponKey = 'akm'; addPopup('🔫 Đổi súng: AKM'); }
+      if (e.code === 'Digit3') { player.weaponKey = 's1897'; addPopup('💥 Đổi súng: Shotgun S1897'); }
+      if (e.code === 'Space' && matchState !== 'PLAYING') initMatch();
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keys[e.code] = false;
+    });
+
+    canvas.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      toggleScope();
+    });
+
+    canvas.addEventListener('pointerdown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const px = (e.clientX - rect.left) * (W / rect.width);
+      const py = (e.clientY - rect.top) * (H / rect.height);
+
+      if (matchState !== 'PLAYING') {
+        initMatch();
+        return;
+      }
+
+      // Kiểm tra nếu bấm vào nút Bắn Tròn To ở góc phải dưới
+      const fireBtnX = W - 75;
+      const fireBtnY = H - 72;
+      if (Math.hypot(px - fireBtnX, py - fireBtnY) < 42) {
+        isFiringHold = true;
+        firePlayerWeapon();
+        return;
+      }
+
+      // Kiểm tra nếu bấm vào nút Bơm Máu (Medkit)
+      const healBtnX = W - 155;
+      const healBtnY = H - 56;
+      if (Math.hypot(px - healBtnX, py - healBtnY) < 28) {
+        useMedkit();
+        return;
+      }
+
+      // Kiểm tra nếu chạm vào vùng Joystick di chuyển góc trái dưới
+      joy.baseY = H - 78;
+      if (px < 165 && py > H - 165) {
+        joy.active = true;
+        updateJoystick(px, py);
+        return;
+      }
+
+      // Chạm/Click vùng giữa màn hình: vừa bắn vừa kéo để xoay góc nhìn 3D!
+      isDraggingLook = true;
+      isFiringHold = true;
+      lastPointerX = px;
+      lastPointerY = py;
+      firePlayerWeapon();
+    });
+
+    canvas.addEventListener('pointermove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const px = (e.clientX - rect.left) * (W / rect.width);
+      const py = (e.clientY - rect.top) * (H / rect.height);
+
+      if (joy.active && px < 220) {
+        updateJoystick(px, py);
+        return;
+      }
+
+      if (isDraggingLook) {
+        const dx = px - lastPointerX;
+        const dy = py - lastPointerY;
+        const sens = isScoped ? 0.0035 : 0.0075;
+        player.yaw += dx * sens;
+        player.pitch = Math.max(-0.35, Math.min(0.35, player.pitch - dy * sens * 0.6));
+        lastPointerX = px;
+        lastPointerY = py;
+      }
+    });
+
+    window.addEventListener('pointerup', () => {
+      joy.active = false;
+      joy.dx = 0;
+      joy.dy = 0;
+      isDraggingLook = false;
+      isFiringHold = false;
+    });
+
+    function updateJoystick(px, py) {
+      const dx = px - joy.baseX;
+      const dy = py - joy.baseY;
+      const dist = Math.hypot(dx, dy);
+      const maxR = 38;
+      const clamped = Math.min(dist, maxR);
+      const ang = Math.atan2(dy, dx);
+      joy.stickX = joy.baseX + Math.cos(ang) * clamped;
+      joy.stickY = joy.baseY + Math.sin(ang) * clamped;
+      joy.dx = (Math.cos(ang) * clamped) / maxR;
+      joy.dy = (Math.sin(ang) * clamped) / maxR;
+    }
+
+    function toggleScope() {
+      isScoped = !isScoped;
+      document.getElementById('btnScope').textContent = isScoped ? '🔭 Đang Bật Scope 4x' : '🎯 Scope 4x (Phím F)';
+    }
+
+    function toggleCameraMode() {
+      cameraMode = cameraMode === 'TPS' ? 'FPS' : 'TPS';
+      document.getElementById('btnToggleCam').textContent =
+        cameraMode === 'TPS' ? '🎥 Góc nhìn: TPS (Thứ 3)' : '🎥 Góc nhìn: FPS (Thứ 1)';
+    }
+
+    function useMedkit() {
+      if (player.medkits <= 0) {
+        addPopup('❌ Hết Túi Cứu Thương! Nhặt trên sân hoặc mua trong Shop!', '#EF4444');
+        return;
+      }
+      if (player.hp >= player.maxHp) {
+        addPopup('❤️ Máu đang đầy 100%!', '#10B981');
+        return;
+      }
+      player.medkits--;
+      player.hp = player.maxHp;
+      sfx.headshotDing();
+      addPopup('🩹 ĐÃ BƠM ĐẦY 100 MÁU & NƯỚC TĂNG LỰC!', '#10B981');
+    }
+
+    // =====================================================
+    // BẮN SÚNG & ĐƯỜNG ĐẠN 3D
+    // =====================================================
+    function firePlayerWeapon() {
+      if (matchState !== 'PLAYING' || player.shootTimer > 0) return;
+      const w = WEAPONS[player.weaponKey] || WEAPONS.m416;
+      player.shootTimer = w.cooldown;
+
+      sfx.gunshot(w.sound, 0.26);
+      recoilKick = w.id === 'awm' ? 14 : 6;
+      screenShake = w.id === 'awm' ? 8 : 3.5;
+
+      // Tự động hỗ trợ ngắm nhẹ (Aim Assist) vào kẻ địch gần tâm ngắm nhất cho dễ bắn trên cả điện thoại & PC!
+      let aimYaw = player.yaw;
+      let bestBot = null;
+      let bestAngleDiff = isScoped ? 0.08 : 0.14;
+      for (const b of bots) {
+        const dx = b.x - player.x;
+        const dz = b.z - player.z;
+        const angToBot = Math.atan2(dx, dz);
+        let diff = normalizeAngle(angToBot - player.yaw);
+        if (Math.abs(diff) < bestAngleDiff && Math.hypot(dx, dz) < w.range) {
+          bestAngleDiff = Math.abs(diff);
+          bestBot = b;
+        }
+      }
+      if (bestBot) {
+        const targetAng = Math.atan2(bestBot.x - player.x, bestBot.z - player.z);
+        aimYaw += normalizeAngle(targetAng - aimYaw) * 0.65;
+      }
+
+      const pellets = w.pellets || 1;
+      for (let i = 0; i < pellets; i++) {
+        const spread = (Math.random() - 0.5) * (isScoped ? w.spread * 0.25 : w.spread);
+        const angle = aimYaw + spread;
+        const speed = 28;
+        bullets3D.push({
+          fromPlayer: true,
+          x: player.x + Math.sin(angle) * 16,
+          z: player.z + Math.cos(angle) * 16,
+          vx: Math.sin(angle) * speed,
+          vz: Math.cos(angle) * speed,
+          dmg: w.dmg,
+          color: w.color,
+          life: Math.floor(w.range / speed)
+        });
+      }
+    }
+
+    function normalizeAngle(a) {
+      while (a > Math.PI) a -= Math.PI * 2;
+      while (a < -Math.PI) a += Math.PI * 2;
+      return a;
+    }
+
+    // =====================================================
+    // CẬP NHẬT VÒNG LẶP LOGIC 3D
+    // =====================================================
+    function update() {
+      if (screenShake > 0) screenShake *= 0.82;
+      if (recoilKick > 0) recoilKick *= 0.78;
+      if (hitMarkerTimer > 0) hitMarkerTimer--;
+
+      if (matchState !== 'PLAYING') return;
+
+      if (player.shootTimer > 0) player.shootTimer--;
+      if (isFiringHold && player.shootTimer <= 0) {
+        firePlayerWeapon();
+      }
+
+      // 1. Xoay góc nhìn bằng phím Q / E hoặc Mũi tên Trái / Phải
+      const turnSpeed = isScoped ? 0.025 : 0.045;
+      if (keys['ArrowLeft'] || keys['KeyQ']) player.yaw -= turnSpeed;
+      if (keys['ArrowRight'] || keys['KeyE']) player.yaw += turnSpeed;
+
+      // 2. Di chuyển 3D theo góc nhìn (Forward / Strafe)
+      let moveForward = 0;
+      let moveStrafe = 0;
+      if (keys['KeyW'] || keys['ArrowUp']) moveForward += 1;
+      if (keys['KeyS'] || keys['ArrowDown']) moveForward -= 1;
+      if (keys['KeyA']) moveStrafe -= 1;
+      if (keys['KeyD']) moveStrafe += 1;
+
+      if (joy.active) {
+        moveForward -= joy.dy;
+        moveStrafe += joy.dx;
+        // Xoay nhẹ hướng nhìn khi gạt Joystick sang 2 bên để chơi 1 tay trên điện thoại cực tiện
+        player.yaw += joy.dx * 0.032;
+      }
+
+      const moveSpd = (player.ghillie ? 4.8 : 3.9) * (isScoped ? 0.55 : 1);
+      const forwardX = Math.sin(player.yaw);
+      const forwardZ = Math.cos(player.yaw);
+      const rightX = Math.cos(player.yaw);
+      const rightZ = -Math.sin(player.yaw);
+
+      const dx = forwardX * moveForward + rightX * moveStrafe;
+      const dz = forwardZ * moveForward + rightZ * moveStrafe;
+      const len = Math.hypot(dx, dz);
+
+      if (len > 0.05) {
+        player.vx = (dx / len) * moveSpd;
+        player.vz = (dz / len) * moveSpd;
+        player.legAnim += 0.35;
+      } else {
+        player.vx *= 0.7;
+        player.vz *= 0.7;
+      }
+
+      player.x += player.vx;
+      player.z += player.vz;
+
+      // Nhặt Thính Airdrop 🪂 hoặc Hộp Cứu Thương khi chạy lại gần!
+      for (const crate of lootCrates) {
+        if (!crate.taken) {
+          // Tạo cột khói đỏ bốc lên trời từ Thùng Thính 🪂
+          if (crate.type === 'airdrop' && Math.random() < 0.45) {
+            particles3D.push({
+              x: crate.x + (Math.random() - 0.5) * 14,
+              y: 12,
+              z: crate.z + (Math.random() - 0.5) * 14,
+              vx: (Math.random() - 0.5) * 0.4,
+              vy: 1.6 + Math.random() * 1.2,
+              vz: (Math.random() - 0.5) * 0.4,
+              r: 9 + Math.random() * 7,
+              color: 'rgba(239, 68, 68, 0.75)',
+              life: 48
+            });
+          }
+
+          if (Math.hypot(player.x - crate.x, player.z - crate.z) < 42) {
+            crate.taken = true;
+            sfx.chickenDinner();
+            if (crate.type === 'airdrop') {
+              player.weaponKey = 'awm';
+              player.helmetLv = 3;
+              player.vestLv = 3;
+              player.armor = 100;
+              player.medkits += 1;
+              addPopup('🪂 ĐÃ NHẶT THÍNH: SÚNG NGẮM AWM + MŨ 3 + GIÁP 3!', '#FACC15');
+            } else {
+              player.medkits += 2;
+              player.hp = Math.min(player.maxHp, player.hp + 40);
+              addPopup('🩹 NHẶT HỘP QUÂN Y: +2 TÚI CỨU THƯƠNG & HỒI MÁU!', '#10B981');
+            }
+          }
+        }
+      }
+
+      // 3. Thu hẹp Vòng Bo Xanh (Blue Zone)
+      if (zone.radius > zone.minRadius) {
+        zone.radius -= zone.shrinkSpeed;
+      }
+      // Trừ máu nếu đứng ngoài Vòng Bo
+      const playerDistFromCenter = Math.hypot(player.x - zone.x, player.z - zone.z);
+      if (playerDistFromCenter > zone.radius) {
+        player.hp -= 0.12;
+        if (player.hp <= 0) {
+          matchState = 'DEFEAT';
+        }
+      }
+
+      // 4. Cập nhật AI Bots (Di chuyển vào Bo + Giao tranh với nhau & với Người chơi!)
+      for (let i = bots.length - 1; i >= 0; i--) {
+        const b = bots[i];
+        if (b.hitFlash > 0) b.hitFlash--;
+
+        const distCenter = Math.hypot(b.x - zone.x, b.z - zone.z);
+        const distToPlayer = Math.hypot(player.x - b.x, player.z - b.z);
+
+        // Nếu ở ngoài Bo -> Chạy gấp vào tâm Bo!
+        if (distCenter > zone.radius * 0.85) {
+          b.yaw = Math.atan2(zone.x - b.x, zone.z - b.z);
+          b.x += Math.sin(b.yaw) * 2.7;
+          b.z += Math.cos(b.yaw) * 2.7;
+          b.legAnim += 0.3;
+        } else if (distToPlayer < (player.ghillie ? 240 : 360)) {
+          // Phát hiện người chơi -> Quay mặt ngắm bắn & lách qua lại!
+          b.yaw = Math.atan2(player.x - b.x, player.z - b.z);
+          if (distToPlayer > 130) {
+            b.x += Math.sin(b.yaw) * 2.1;
+            b.z += Math.cos(b.yaw) * 2.1;
+            b.legAnim += 0.25;
+          }
+          b.shootCooldown--;
+          if (b.shootCooldown <= 0) {
+            b.shootCooldown = 55 + Math.floor(Math.random() * 45);
+            const spread = (Math.random() - 0.5) * 0.18;
+            const ang = b.yaw + spread;
+            bullets3D.push({
+              fromPlayer: false,
+              ownerName: b.name,
+              x: b.x + Math.sin(ang) * 15,
+              z: b.z + Math.cos(ang) * 15,
+              vx: Math.sin(ang) * 17,
+              vz: Math.cos(ang) * 17,
+              dmg: 11,
+              color: '#F43F5E',
+              life: 26
+            });
+          }
+        } else {
+          // Đi tuần tra và tự bắn nhau với các Bot khác ở xa!
+          b.x += Math.sin(b.yaw) * 1.6;
+          b.z += Math.cos(b.yaw) * 1.6;
+          b.legAnim += 0.2;
+          if (Math.random() < 0.02) b.yaw += (Math.random() - 0.5) * 1.5;
+
+          // Thi thoảng các Bot tự tiêu diệt lẫn nhau tạo không khí Battle Royale sống động
+          if (bots.length > 3 && Math.random() < 0.0008) {
+            const victimIdx = Math.floor(Math.random() * bots.length);
+            if (victimIdx !== i) {
+              const victim = bots[victimIdx];
+              addKillFeed(`💀 ${b.name} [AKM] hạ gục ${victim.name}`);
+              bots.splice(victimIdx, 1);
+              updateHUD();
+              break;
+            }
+          }
+        }
+      }
+
+      // 5. Cập nhật Đường Đạn 3D & Va Chạm
+      for (let i = bullets3D.length - 1; i >= 0; i--) {
+        const bl = bullets3D[i];
+        bl.x += bl.vx;
+        bl.z += bl.vz;
+        bl.life--;
+
+        if (bl.life <= 0) {
+          bullets3D.splice(i, 1);
+          continue;
+        }
+
+        if (bl.fromPlayer) {
+          // Kiểm tra trúng Bot
+          let hitBot = false;
+          for (let j = bots.length - 1; j >= 0; j--) {
+            const b = bots[j];
+            if (Math.hypot(bl.x - b.x, bl.z - b.z) < 24) {
+              const isHeadshot = Math.random() < (isScoped ? 0.48 : 0.25);
+              const finalDmg = isHeadshot ? Math.round(bl.dmg * 1.8) : bl.dmg;
+              b.hp -= finalDmg;
+              b.hitFlash = 6;
+              hitMarkerTimer = 10;
+
+              // Hiệu ứng tia máu / tia lửa mũ sắt 3D
+              for (let p = 0; p < 6; p++) {
+                particles3D.push({
+                  x: b.x,
+                  y: isHeadshot ? 38 : 22,
+                  z: b.z,
+                  vx: (Math.random() - 0.5) * 3,
+                  vy: 1 + Math.random() * 3,
+                  vz: (Math.random() - 0.5) * 3,
+                  r: 5,
+                  color: isHeadshot ? '#FACC15' : '#EF4444',
+                  life: 18
+                });
+              }
+
+              if (isHeadshot) {
+                sfx.headshotDing();
+                addPopup(`🎯 HEADSHOT! -${finalDmg}`, '#FACC15');
+              }
+
+              if (b.hp <= 0) {
+                player.kills++;
+                bpCoins += 35;
+                sfx.headshotDing();
+                addKillFeed(`🔥 Bạn [${WEAPONS[player.weaponKey].name}] hạ gục ${b.name}! (+35 BP)`);
+                bots.splice(j, 1);
+                updateHUD();
+
+                // Nếu hạ hết toàn bộ kẻ địch -> TOP 1 WINNER WINNER CHICKEN DINNER!
+                if (bots.length === 0) {
+                  matchState = 'VICTORY';
+                  bpCoins += 150;
+                  sfx.chickenDinner();
+                  updateHUD();
+                }
+              }
+
+              hitBot = true;
+              break;
+            }
+          }
+          if (hitBot) {
+            bullets3D.splice(i, 1);
+            continue;
+          }
+        } else {
+          // Đạn của Bot bắn trúng Người chơi
+          if (Math.hypot(bl.x - player.x, bl.z - player.z) < 20) {
+            const dmgReduction = player.armor > 0 ? 0.5 : 1.0;
+            const taken = Math.round(bl.dmg * dmgReduction);
+            if (player.armor > 0) player.armor = Math.max(0, player.armor - 8);
+            player.hp -= taken;
+            screenShake = 7;
+            bullets3D.splice(i, 1);
+
+            if (player.hp <= 0) {
+              player.hp = 0;
+              matchState = 'DEFEAT';
+            }
+            continue;
+          }
+        }
+      }
+
+      // 6. Cập nhật Hạt 3D & Kill Feed
+      for (let i = particles3D.length - 1; i >= 0; i--) {
+        const pt = particles3D[i];
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.z += pt.vz;
+        pt.life--;
+        if (pt.life <= 0) particles3D.splice(i, 1);
+      }
+
+      for (let i = killFeed.length - 1; i >= 0; i--) {
+        killFeed[i].life--;
+        if (killFeed[i].life <= 0) killFeed.splice(i, 1);
+      }
+
+      for (let i = popups.length - 1; i >= 0; i--) {
+        popups[i].y -= 1.2;
+        popups[i].life--;
+        if (popups[i].life <= 0) popups.splice(i, 1);
+      }
+    }
+
+    // =====================================================
+    // ENGINE CHIẾU PHỐI CẢNH 3D (3D PERSPECTIVE CAMERA & Z-BUFFER)
+    // =====================================================
+    function getCamera() {
+      const fovScale = isScoped ? W * 1.45 : W * 0.72;
+      // Ở góc nhìn thứ 3 (TPS), camera lùi ra sau lưng nhân vật 68 đơn vị và cao hơn đầu
+      const camDist = (cameraMode === 'TPS' && !isScoped) ? 68 : 0;
+      const camX = player.x - Math.sin(player.yaw) * camDist;
+      const camZ = player.z - Math.cos(player.yaw) * camDist;
+      const camY = (cameraMode === 'TPS' && !isScoped) ? 46 : 32;
+      const horizonY = H * 0.44 + player.pitch * H * 0.7 + recoilKick;
+
+      return { camX, camY, camZ, fovScale, horizonY };
+    }
+
+    function project3D(wx, wy, wz, cam) {
+      const dx = wx - cam.camX;
+      const dz = wz - cam.camZ;
+      const cosY = Math.cos(-player.yaw);
+      const sinY = Math.sin(-player.yaw);
+
+      // Tọa độ trong không gian Camera
+      const rx = dx * cosY - dz * sinY;
+      const rz = dx * sinY + dz * cosY;
+
+      if (rz <= 8) return null; // Phía sau lưng camera
+
+      const scale = cam.fovScale / rz;
+      const sx = W / 2 + rx * scale;
+      const sy = cam.horizonY - (wy - cam.camY) * scale;
+      return { sx, sy, scale, depth: rz };
+    }
+
+    function render3DWorld() {
+      const cam = getCamera();
+
+      // 1. Vẽ Bầu Trời 3D & Núi Xa xoay theo góc nhìn 360 độ
+      const skyGrad = ctx.createLinearGradient(0, 0, 0, cam.horizonY);
+      skyGrad.addColorStop(0, '#0284C7');
+      skyGrad.addColorStop(1, '#BAE6FD');
+      ctx.fillStyle = skyGrad;
+      ctx.fillRect(0, 0, W, Math.max(0, cam.horizonY));
+
+      // Dãy núi phía chân trời xoay mượt theo góc yaw
+      ctx.fillStyle = '#64748B';
+      ctx.beginPath();
+      ctx.moveTo(0, cam.horizonY);
+      for (let x = 0; x <= W; x += 25) {
+        const worldAng = player.yaw + ((x - W / 2) / cam.fovScale);
+        const hMountain = Math.abs(Math.sin(worldAng * 3) * 28 + Math.cos(worldAng * 7) * 14);
+        ctx.lineTo(x, cam.horizonY - hMountain);
+      }
+      ctx.lineTo(W, cam.horizonY);
+      ctx.closePath();
+      ctx.fill();
+
+      // 2. Vẽ Mặt Đất Cỏ Sinh Tồn 3D
+      const groundGrad = ctx.createLinearGradient(0, cam.horizonY, 0, H);
+      groundGrad.addColorStop(0, '#4D7C0F');
+      groundGrad.addColorStop(1, '#365314');
+      ctx.fillStyle = groundGrad;
+      ctx.fillRect(0, cam.horizonY, W, H - cam.horizonY);
+
+      // Vẽ Lưới Ô Mặt Đất Phối Cảnh 3D để tạo cảm giác chạy chân thực
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.lineWidth = 1.5;
+      const gridStep = 80;
+      const baseGX = Math.floor(player.x / gridStep) * gridStep;
+      const baseGZ = Math.floor(player.z / gridStep) * gridStep;
+
+      for (let gx = baseGX - 560; gx <= baseGX + 560; gx += gridStep) {
+        for (let gz = baseGZ - 560; gz <= baseGZ + 560; gz += gridStep) {
+          const p1 = project3D(gx, 0, gz, cam);
+          const p2 = project3D(gx + gridStep, 0, gz, cam);
+          const p3 = project3D(gx, 0, gz + gridStep, cam);
+          if (p1 && p2) {
+            ctx.beginPath();
+            ctx.moveTo(p1.sx, p1.sy);
+            ctx.lineTo(p2.sx, p2.sy);
+            ctx.stroke();
+          }
+          if (p1 && p3) {
+            ctx.beginPath();
+            ctx.moveTo(p1.sx, p1.sy);
+            ctx.lineTo(p3.sx, p3.sy);
+            ctx.stroke();
+          }
+        }
+      }
+
+      // 3. Vẽ Bức Tường Năng Lượng Vòng Bo Xanh 3D (Blue Zone Cylinder)
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.75)';
+      ctx.lineWidth = 3;
+      const segs = 48;
+      for (let i = 0; i < segs; i++) {
+        const a1 = (i / segs) * Math.PI * 2;
+        const a2 = ((i + 1) / segs) * Math.PI * 2;
+        const b1 = project3D(zone.x + Math.cos(a1) * zone.radius, 0, zone.z + Math.sin(a1) * zone.radius, cam);
+        const b2 = project3D(zone.x + Math.cos(a2) * zone.radius, 0, zone.z + Math.sin(a2) * zone.radius, cam);
+        const t1 = project3D(zone.x + Math.cos(a1) * zone.radius, 120, zone.z + Math.sin(a1) * zone.radius, cam);
+        if (b1 && b2) {
+          ctx.beginPath();
+          ctx.moveTo(b1.sx, b1.sy);
+          ctx.lineTo(b2.sx, b2.sy);
+          ctx.stroke();
+        }
+        if (b1 && t1 && i % 2 === 0) {
+          ctx.beginPath();
+          ctx.moveTo(b1.sx, b1.sy);
+          ctx.lineTo(t1.sx, t1.sy);
+          ctx.stroke();
+        }
+      }
+
+      // 4. Gom tất cả đối tượng 3D vào danh sách Z-Buffer (Sắp xếp từ Xa tới Gần!)
+      const renderList = [];
+
+      // Chướng ngại vật 3D
+      for (const ob of obstacles3D) {
+        const pr = project3D(ob.x, 0, ob.z, cam);
+        if (pr && pr.depth < 900) {
+          renderList.push({ type: 'obstacle', data: ob, pr, depth: pr.depth });
+        }
+      }
+
+      // Thùng Thính Airdrop 🪂 & Hộp Đồ
+      for (const cr of lootCrates) {
+        if (cr.taken) continue;
+        const pr = project3D(cr.x, 0, cr.z, cam);
+        if (pr && pr.depth < 950) {
+          renderList.push({ type: 'crate', data: cr, pr, depth: pr.depth });
+        }
+      }
+
+      // Chiến binh AI (Bots)
+      for (const b of bots) {
+        const pr = project3D(b.x, 0, b.z, cam);
+        if (pr && pr.depth < 950) {
+          renderList.push({ type: 'bot', data: b, pr, depth: pr.depth });
+        }
+      }
+
+      // Đường đạn 3D
+      for (const bl of bullets3D) {
+        const pr = project3D(bl.x, 24, bl.z, cam);
+        if (pr) {
+          renderList.push({ type: 'bullet', data: bl, pr, depth: pr.depth });
+        }
+      }
+
+      // Hạt Khói Đỏ Thính & Tia Lửa 3D
+      for (const pt of particles3D) {
+        const pr = project3D(pt.x, pt.y, pt.z, cam);
+        if (pr) {
+          renderList.push({ type: 'particle', data: pt, pr, depth: pr.depth });
+        }
+      }
+
+      // Sắp xếp từ Xa đến Gần (Painter's Algorithm Z-Buffer)
+      renderList.sort((a, b) => b.depth - a.depth);
+
+      for (const item of renderList) {
+        const { pr, data } = item;
+        const s = pr.scale;
+
+        if (item.type === 'obstacle') {
+          drawObstacle3D(data, pr.sx, pr.sy, s);
+        } else if (item.type === 'crate') {
+          drawLootCrate3D(data, pr.sx, pr.sy, s);
+        } else if (item.type === 'bot') {
+          drawSoldier3D(data, pr.sx, pr.sy, s, false);
+        } else if (item.type === 'bullet') {
+          ctx.fillStyle = data.color;
+          ctx.beginPath();
+          ctx.arc(pr.sx, pr.sy, Math.max(2.5, 4.5 * s), 0, Math.PI * 2);
+          ctx.fill();
+        } else if (item.type === 'particle') {
+          ctx.fillStyle = data.color;
+          ctx.beginPath();
+          ctx.arc(pr.sx, pr.sy, Math.max(2, data.r * s), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // 5. Vẽ Nhân Vật Chính ở Góc Nhìn Thứ 3 (TPS) hoặc Khẩu Súng 3D ở Góc Nhìn Thứ 1 (FPS)
+      if (!isScoped) {
+        if (cameraMode === 'TPS') {
+          const pPr = project3D(player.x, 0, player.z, cam);
+          if (pPr) {
+            drawSoldier3D(player, pPr.sx, pPr.sy, pPr.scale, true);
+          }
+        } else {
+          drawFPSWeapon();
+        }
+      }
+    }
+
+    function drawObstacle3D(ob, sx, sy, s) {
+      const w = ob.w * s;
+      const h = ob.h * s;
+      if (w < 2) return;
+
+      ctx.save();
+      ctx.translate(sx, sy);
+
+      // Bóng đổ dưới đất
+      ctx.fillStyle = 'rgba(0,0,0,0.28)';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, w * 0.65, w * 0.22, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (ob.kind === 'tree') {
+        // Thân cây gỗ 3D
+        ctx.fillStyle = ob.trunk;
+        ctx.fillRect(-w * 0.18, -h * 0.45, w * 0.36, h * 0.45);
+        // Tán cây thông 3 tầng 3D
+        ctx.fillStyle = ob.color;
+        ctx.strokeStyle = '#14532D';
+        ctx.lineWidth = Math.max(1, 2 * s);
+        for (let lv = 0; lv < 3; lv++) {
+          const yBot = -h * (0.35 + lv * 0.22);
+          const yTop = -h * (0.68 + lv * 0.22);
+          const layerW = w * (0.85 - lv * 0.18);
+          ctx.beginPath();
+          ctx.moveTo(-layerW, yBot);
+          ctx.lineTo(0, yTop);
+          ctx.lineTo(layerW, yBot);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        }
+      } else if (ob.kind === 'wall') {
+        // Khối Lô Cốt / Tường Nhà 2 Mặt Giả Lập Khối Hộp 3D
+        ctx.fillStyle = '#94A3B8';
+        ctx.strokeStyle = '#1E293B';
+        ctx.lineWidth = Math.max(1, 2 * s);
+        ctx.fillRect(-w * 0.6, -h, w * 1.2, h);
+        ctx.strokeRect(-w * 0.6, -h, w * 1.2, h);
+
+        // Mái nhà
+        ctx.fillStyle = ob.roof;
+        ctx.beginPath();
+        ctx.moveTo(-w * 0.68, -h);
+        ctx.lineTo(0, -h * 1.32);
+        ctx.lineTo(w * 0.68, -h);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+
+        // Ô cửa sổ bắn tỉa
+        ctx.fillStyle = '#0F172A';
+        ctx.fillRect(-w * 0.22, -h * 0.72, w * 0.44, h * 0.28);
+      } else {
+        // Thùng gỗ Quân Sự 3D
+        ctx.fillStyle = ob.color;
+        ctx.strokeStyle = ob.border;
+        ctx.lineWidth = Math.max(1, 2.5 * s);
+        ctx.fillRect(-w * 0.5, -h, w, h);
+        ctx.strokeRect(-w * 0.5, -h, w, h);
+        ctx.beginPath();
+        ctx.moveTo(-w * 0.5, -h);
+        ctx.lineTo(w * 0.5, 0);
+        ctx.moveTo(w * 0.5, -h);
+        ctx.lineTo(-w * 0.5, 0);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+    }
+
+    function drawLootCrate3D(cr, sx, sy, s) {
+      const w = 28 * s;
+      const h = 26 * s;
+      ctx.save();
+      ctx.translate(sx, sy);
+
+      if (cr.type === 'airdrop') {
+        // Thùng Thính PUBG: Nửa dưới Đỏ rực, nắp trên Xanh Dương!
+        ctx.fillStyle = '#DC2626';
+        ctx.strokeStyle = '#0F172A';
+        ctx.lineWidth = Math.max(1, 2 * s);
+        ctx.fillRect(-w * 0.5, -h, w, h);
+        ctx.strokeRect(-w * 0.5, -h, w, h);
+
+        ctx.fillStyle = '#1D4ED8';
+        ctx.fillRect(-w * 0.52, -h, w * 1.04, h * 0.32);
+      } else {
+        // Hộp Cứu Thương Quân Y Trắng Chữ Thập Đỏ
+        ctx.fillStyle = '#F8FAFC';
+        ctx.strokeStyle = '#16A34A';
+        ctx.lineWidth = Math.max(1, 2 * s);
+        ctx.fillRect(-w * 0.45, -h * 0.8, w * 0.9, h * 0.8);
+        ctx.strokeRect(-w * 0.45, -h * 0.8, w * 0.9, h * 0.8);
+      }
+
+      ctx.restore();
+    }
+
+    function drawSoldier3D(unit, sx, sy, s, isMainPlayer) {
+      const h = 42 * s;
+      const w = 22 * s;
+      if (h < 3) return;
+
+      ctx.save();
+      ctx.translate(sx, sy);
+
+      // Bóng tròn dưới chân
+      ctx.fillStyle = 'rgba(0,0,0,0.32)';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, w * 0.7, w * 0.25, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      const legSwing = Math.sin(unit.legAnim) * (5 * s);
+
+      // 1. Hai Chân Chạy 3D
+      ctx.fillStyle = '#1E293B';
+      ctx.fillRect(-w * 0.35, -h * 0.38 + legSwing, w * 0.28, h * 0.38);
+      ctx.fillRect(w * 0.07, -h * 0.38 - legSwing, w * 0.28, h * 0.38);
+
+      // 2. Thân Người & Áo Giáp Chống Đạn (Hoặc Áo Cỏ Ghillie Suit!)
+      if (isMainPlayer && player.ghillie) {
+        ctx.fillStyle = '#15803D';
+      } else {
+        ctx.fillStyle = unit.hitFlash > 0 ? '#FFFFFF' : (isMainPlayer ? '#2563EB' : unit.skinColor);
+      }
+      ctx.strokeStyle = '#0F172A';
+      ctx.lineWidth = Math.max(1, 1.8 * s);
+      ctx.beginPath();
+      ctx.roundRect(-w * 0.48, -h * 0.82, w * 0.96, h * 0.48, 4 * s);
+      ctx.fill();
+      ctx.stroke();
+
+      // Balo Cấp 3 & Giáp Chống Đạn trước ngực
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(-w * 0.36, -h * 0.78, w * 0.72, h * 0.36);
+
+      // 3. Khẩu Súng Cầm Trên Tay
+      ctx.fillStyle = '#0F172A';
+      ctx.fillRect(w * 0.28, -h * 0.68, w * 0.55, h * 0.14);
+
+      // 4. Đầu & Mũ Bảo Hiểm Cấp 3 Huyền Thoại (PUBG Level 3 Helmet!)
+      ctx.fillStyle = '#FDE047';
+      ctx.beginPath();
+      ctx.arc(0, -h * 0.98, w * 0.36, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Mũ sắt Cấp 3 trùm đầu có khe kính ngang
+      ctx.fillStyle = unit.helmetLv >= 3 ? '#1E293B' : '#475569';
+      ctx.beginPath();
+      ctx.arc(0, -h * 1.0, w * 0.4, Math.PI, 0);
+      ctx.lineTo(w * 0.4, -h * 0.88);
+      ctx.lineTo(-w * 0.4, -h * 0.88);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Khe kính sáng màu của Mũ 3
+      ctx.fillStyle = '#38BDF8';
+      ctx.fillRect(-w * 0.26, -h * 1.0, w * 0.52, h * 0.08);
+
+      // Thanh máu trên đầu Kẻ Địch
+      if (!isMainPlayer && h > 14) {
+        const barW = Math.max(28, w * 1.4);
+        ctx.fillStyle = 'rgba(0,0,0,0.65)';
+        ctx.fillRect(-barW / 2, -h * 1.32, barW, 5);
+        ctx.fillStyle = '#EF4444';
+        ctx.fillRect(-barW / 2 + 1, -h * 1.32 + 1, (barW - 2) * Math.max(0, unit.hp / unit.maxHp), 3);
+      }
+
+      ctx.restore();
+    }
+
+    function drawFPSWeapon() {
+      // Vẽ tay cầm súng góc nhìn thứ nhất (FPS) ở góc phải dưới
+      const w = WEAPONS[player.weaponKey] || WEAPONS.m416;
+      ctx.save();
+      ctx.translate(W * 0.64, H + recoilKick * 2);
+      ctx.fillStyle = '#1E293B';
+      ctx.strokeStyle = '#0F172A';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(-25, 0);
+      ctx.lineTo(-5, -105);
+      ctx.lineTo(30, -105);
+      ctx.lineTo(65, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Thân súng màu đặc trưng
+      ctx.fillStyle = w.color;
+      ctx.fillRect(-2, -95, 26, 55);
+      ctx.restore();
+    }
+
+    // =====================================================
+    // VẼ GIAO DIỆN CHIẾN ĐẤU: TÂM NGẮM, SCOPE 4X, RADAR MINIMAP, HUD
+    // =====================================================
+    function drawCrosshairAndScope() {
+      const cx = W / 2;
+      const cy = H * 0.44;
+
+      if (isScoped) {
+        // Ống ngắm Scope 4x / 8x chuẩn PUBG
+        const scopeR = Math.min(W, H) * 0.41;
+        ctx.save();
+        ctx.fillStyle = 'rgba(2, 6, 23, 0.86)';
+        ctx.beginPath();
+        ctx.rect(0, 0, W, H);
+        ctx.arc(cx, cy, scopeR, 0, Math.PI * 2, true);
+        ctx.fill();
+
+        // Viền ống kính & Thước đo khoảng cách
+        ctx.strokeStyle = '#0F172A';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.arc(cx, cy, scopeR, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.85)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(cx - scopeR, cy);
+        ctx.lineTo(cx + scopeR, cy);
+        ctx.moveTo(cx, cy - scopeR);
+        ctx.lineTo(cx, cy + scopeR);
+        ctx.stroke();
+
+        // Chấm đỏ hồng tâm giữa Scope
+        ctx.fillStyle = '#EF4444';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else {
+        // Tâm ngắm 4 vạch trắng chuẩn Shooter
+        ctx.strokeStyle = hitMarkerTimer > 0 ? '#EF4444' : '#FFFFFF';
+        ctx.lineWidth = 2;
+        const gap = 7 + recoilKick * 0.8;
+        ctx.beginPath();
+        ctx.moveTo(cx - gap - 8, cy); ctx.lineTo(cx - gap, cy);
+        ctx.moveTo(cx + gap, cy);     ctx.lineTo(cx + gap + 8, cy);
+        ctx.moveTo(cx, cy - gap - 8); ctx.lineTo(cx, cy - gap);
+        ctx.moveTo(cx, cy + gap);     ctx.lineTo(cx, cy + gap + 8);
+        ctx.stroke();
+      }
+
+      // Hitmarker chữ X đỏ khi bắn trúng đích!
+      if (hitMarkerTimer > 0) {
+        ctx.strokeStyle = '#EF4444';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(cx - 10, cy - 10); ctx.lineTo(cx + 10, cy + 10);
+        ctx.moveTo(cx + 10, cy - 10); ctx.lineTo(cx - 10, cy + 10);
+        ctx.stroke();
+      }
+    }
+
+    function drawMinimapRadar() {
+      const mapR = 54;
+      const mx = W - mapR - 12;
+      const my = mapR + 12;
+      const mapScale = mapR / 980;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(mx, my, mapR, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
+      ctx.fill();
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#94A3B8';
+      ctx.stroke();
+      ctx.clip();
+
+      // Vòng Bo Xanh trên Radar
+      ctx.strokeStyle = '#38BDF8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(mx + zone.x * mapScale, my - zone.z * mapScale, zone.radius * mapScale, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Thùng Thính Đỏ 🪂 trên Radar
+      for (const cr of lootCrates) {
+        if (cr.taken) continue;
+        ctx.fillStyle = cr.type === 'airdrop' ? '#EF4444' : '#10B981';
+        ctx.fillRect(mx + cr.x * mapScale - 3, my - cr.z * mapScale - 3, 6, 6);
+      }
+
+      // Chấm đỏ kẻ địch trên Radar
+      ctx.fillStyle = '#F43F5E';
+      for (const b of bots) {
+        ctx.beginPath();
+        ctx.arc(mx + b.x * mapScale, my - b.z * mapScale, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Vị trí & Hướng nhìn của Bạn (Tam giác Vàng)
+      const px = mx + player.x * mapScale;
+      const py = my - player.z * mapScale;
+      ctx.fillStyle = '#FACC15';
+      ctx.beginPath();
+      ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(250, 204, 21, 0.55)';
+      ctx.beginPath();
+      ctx.moveTo(px, py);
+      ctx.lineTo(px + Math.sin(player.yaw) * 16, py - Math.cos(player.yaw) * 16);
+      ctx.stroke();
+
+      ctx.restore();
+    }
+
+    function drawHUDAndControls() {
+      // 1. La bàn hướng Bắc - Đông - Nam - Tây trên đỉnh màn hình
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
+      ctx.beginPath();
+      ctx.roundRect(W / 2 - 110, 8, 220, 22, 8);
+      ctx.fill();
+      ctx.fillStyle = '#F8FAFC';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      const deg = Math.round(((player.yaw * 180 / Math.PI) % 360 + 360) % 360);
+      ctx.fillText(`🧭 HƯỚNG: ${deg}°  |  🪂 HẠ GỤC: ${player.kills}`, W / 2, 23);
+
+      // 2. Kill Feed bên góc trái trên
+      ctx.textAlign = 'left';
+      ctx.font = 'bold 11px sans-serif';
+      for (let i = 0; i < killFeed.length; i++) {
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.72)';
+        ctx.beginPath();
+        ctx.roundRect(10, 10 + i * 22, 265, 19, 6);
+        ctx.fill();
+        ctx.fillStyle = '#FDE047';
+        ctx.fillText(killFeed[i].text, 16, 23 + i * 22);
+      }
+
+      // 3. Thanh Máu (HP), Giáp (Armor) & Vũ Khí ở dưới giữa chuẩn PUBG
+      const barW = 220;
+      const barX = W / 2 - barW / 2;
+      const barY = H - 56;
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.beginPath();
+      ctx.roundRect(barX, barY, barW, 48, 12);
+      ctx.fill();
+
+      // Thanh HP
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(barX + 10, barY + 8, barW - 20, 12);
+      ctx.fillStyle = player.hp > 35 ? '#10B981' : '#EF4444';
+      ctx.fillRect(barX + 10, barY + 8, (barW - 20) * Math.max(0, player.hp / player.maxHp), 12);
+
+      // Thanh Giáp
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(barX + 10, barY + 23, barW - 20, 6);
+      ctx.fillStyle = '#38BDF8';
+      ctx.fillRect(barX + 10, barY + 23, (barW - 20) * Math.max(0, player.armor / 100), 6);
+
+      const curWep = WEAPONS[player.weaponKey] || WEAPONS.m416;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'extrabold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(`🔫 ${curWep.name} (Phím 1/2/3 đổi súng) | 🪖 Mũ ${player.helmetLv}`, W / 2, barY + 42);
+
+      // 4. Cần gạt Joystick ảo góc trái dưới
+      joy.baseY = H - 78;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.45)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(joy.baseX, joy.baseY, 38, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      const sx = joy.active ? joy.stickX : joy.baseX;
+      const sy = joy.active ? joy.stickY : joy.baseY;
+      ctx.fillStyle = 'rgba(250, 204, 21, 0.85)';
+      ctx.beginPath();
+      ctx.arc(sx, sy, 16, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 5. Nút Bắn Tròn To & Nút Bơm Máu góc phải dưới
+      const fireX = W - 75;
+      const fireY = H - 72;
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.85)';
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(fireX, fireY, 36, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'extrabold 13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('🔥 BẮN', fireX, fireY + 5);
+
+      const healX = W - 155;
+      const healY = H - 56;
+      ctx.fillStyle = 'rgba(16, 185, 129, 0.85)';
+      ctx.beginPath();
+      ctx.arc(healX, healY, 24, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.fillText(`🩹x${player.medkits}`, healX, healY + 4);
+
+      // Chữ nổi giữa màn hình
+      for (const pp of popups) {
+        ctx.save();
+        ctx.font = 'extrabold 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.strokeStyle = '#0F172A';
+        ctx.lineWidth = 3.5;
+        ctx.fillStyle = pp.color;
+        ctx.strokeText(pp.text, W / 2, pp.y);
+        ctx.fillText(pp.text, W / 2, pp.y);
+        ctx.restore();
+      }
+
+      // Màn hình TOP 1 CHICKEN DINNER hoặc GAME OVER
+      if (matchState !== 'PLAYING') {
+        ctx.fillStyle = 'rgba(2, 6, 23, 0.86)';
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.textAlign = 'center';
+        ctx.fillStyle = matchState === 'VICTORY' ? '#FACC15' : '#F43F5E';
+        ctx.font = 'extrabold 26px sans-serif';
+        ctx.fillText(
+          matchState === 'VICTORY'
+            ? '🏆 WINNER WINNER CHICKEN DINNER! 🍗'
+            : '💀 BẠN ĐÃ BỊ HẠ GỤC TRONG VÒNG BO!',
+          W / 2,
+          H / 2 - 48
+        );
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.fillText(
+          `Thứ hạng: #${bots.length + 1}/20  |  Hạ gục: ${player.kills} mạng  |  Ví thưởng: ${bpCoins} BP`,
+          W / 2,
+          H / 2 - 10
+        );
+
+        ctx.fillStyle = '#F59E0B';
+        ctx.beginPath();
+        ctx.roundRect(W / 2 - 135, H / 2 + 24, 270, 44, 12);
+        ctx.fill();
+        ctx.fillStyle = '#0F172A';
+        ctx.font = 'extrabold 15px sans-serif';
+        ctx.fillText('🪂 CHẠM ĐỂ NHẢY DÙ TRẬN MỚI!', W / 2, H / 2 + 51);
+      }
+    }
+
+    function updateHUD() {
+      document.getElementById('aliveBadge').textContent = `CÒN SỐNG: ${bots.length + 1}/20`;
+      document.getElementById('goldText').textContent = bpCoins;
+      document.getElementById('shopGoldText').textContent = bpCoins;
+    }
+
+    window.buyArmory = function(item, cost) {
+      const toast = document.getElementById('armoryToast');
+      if (bpCoins < cost) {
+        toast.textContent = '❌ Chưa đủ điểm BP! Hãy hạ thêm mục tiêu trong trận nhé!';
+        toast.className = 'mt-3 text-center font-bold text-rose-400 h-4';
+        return;
+      }
+      bpCoins -= cost;
+      sfx.chickenDinner();
+      if (item === 'awm') player.weaponKey = 'awm';
+      if (item === 'ghillie') player.ghillie = true;
+      if (item === 'armor3') {
+        player.helmetLv = 3;
+        player.vestLv = 3;
+        player.armor = 100;
+      }
+      if (item === 'medkit') player.medkits += 3;
+
+      updateHUD();
+      toast.textContent = '✅ Trang bị thành công! Sẵn sàng chiến đấu!';
+      toast.className = 'mt-3 text-center font-bold text-emerald-400 h-4';
+    };
+
+    document.getElementById('btnToggleCam').addEventListener('click', toggleCameraMode);
+    document.getElementById('btnScope').addEventListener('click', toggleScope);
+    document.getElementById('btnNewMatch').addEventListener('click', initMatch);
+    document.getElementById('btnOpenArmory').addEventListener('click', () => {
+      updateHUD();
+      document.getElementById('armoryModal').classList.remove('hidden');
+    });
+    document.getElementById('btnCloseArmory').addEventListener('click', () => {
+      document.getElementById('armoryModal').classList.add('hidden');
+    });
+
+    function render() {
+      ctx.save();
+      if (screenShake > 0.4) {
+        ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+      }
+      render3DWorld();
+      drawCrosshairAndScope();
+      drawMinimapRadar();
+      drawHUDAndControls();
+      ctx.restore();
+    }
+
+    function loop() {
+      update();
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    initMatch();
+    loop();
+  </script>
+
+<!-- Floating Monetization Bar injected by MoneyHunter247 -->
+<div style="position:fixed;bottom:12px;right:12px;z-index:999999;background:rgba(15,23,42,0.95);border:1px solid #10b981;border-radius:12px;padding:8px 14px;display:flex;align-items:center;gap:10px;font-family:system-ui,sans-serif;box-shadow:0 8px 25px rgba(0,0,0,0.5);">
+  <span style="color:#f8fafc;font-size:13px;font-weight:600;">⚡ Want this full source code?</span>
+  <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=xaductrung%40gmail.com&item_name=Commercial+Source+Code+License&amount=49&currency_code=USD&return=https%3A%2F%2Ffiles.catbox.moe%2Fytghdr.zip" target="_blank" style="background:#ffc439;color:#111827;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">💳 Buy Source ($49 PayPal)</a>
+  <a href="https://xaductrung-rgb.github.io" target="_blank" style="background:#10b981;color:#022c22;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">🛒 All Bundles</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Pengu Hop</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #0b1d3a; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
+  canvas { display: block; margin: 0 auto; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+// ================== Pengu Hop — one-tap arcade ==================
+const cv = document.getElementById("c");
+const ctx = cv.getContext("2d");
+const W = 420, H = 760; // logical size
+let scale = 1;
+function resize() {
+  scale = Math.min(innerWidth / W, innerHeight / H);
+  const dpr = devicePixelRatio || 1;
+  cv.width = W * scale * dpr; cv.height = H * scale * dpr;
+  cv.style.width = W * scale + "px"; cv.style.height = H * scale + "px";
+  ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+}
+addEventListener("resize", resize); resize();
+
+// ---------- Audio (procedural, no files) ----------
+let ac = null;
+function audio() { if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); return ac; }
+function tone(f0, f1, dur, type = "sine", vol = 0.2) {
+  const a = audio(), o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(f0, a.currentTime);
+  o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), a.currentTime + dur);
+  g.gain.setValueAtTime(vol, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + dur);
+  o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime + dur);
+}
+function noise(dur, vol = 0.3, freq = 800) {
+  const a = audio(), b = a.createBuffer(1, a.sampleRate * dur, a.sampleRate), d = b.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+  const s = a.createBufferSource(), f = a.createBiquadFilter(), g = a.createGain();
+  f.type = "lowpass"; f.frequency.value = freq; g.gain.value = vol;
+  s.buffer = b; s.connect(f).connect(g).connect(a.destination); s.start();
+}
+const sfx = {
+  jump: () => tone(300, 700, 0.18, "square", 0.08),
+  land: () => { tone(160, 60, 0.12, "sine", 0.3); noise(0.06, 0.15, 1500); },
+  perfect: (c) => { const n = [523, 587, 659, 784, 880, 988, 1047, 1175, 1319][Math.min(c - 1, 8)]; tone(n, n, 0.25, "triangle", 0.18); tone(n * 1.5, n * 1.5, 0.3, "sine", 0.08); },
+  fish: () => { tone(1200, 1800, 0.08, "square", 0.06); setTimeout(() => tone(1600, 2400, 0.1, "square", 0.06), 70); },
+  splash: () => { noise(0.6, 0.4, 900); tone(400, 80, 0.5, "sine", 0.2); },
+};
+
+// ---------- State ----------
+const GAP = 140;          // vertical distance between platforms
+const PENGU_X = W / 2;
+let state, best = +localStorage.getItem("pengu_best") || 0, fishBank = +localStorage.getItem("pengu_fish") || 0;
+let platforms, pengu, camY, score, combo, particles, floaters, shake, t, flash, newBest;
+
+function makePlatform(i) {
+  const level = i;
+  const w = Math.max(100, 190 - level * 1.2);
+  const speed = Math.min(220, 70 + level * 3) * (Math.random() < 0.5 ? -1 : 1);
+  const type = level > 20 && Math.random() < 0.12 ? "ice" : "normal"; // ice: faster
+  return {
+    i, y: -i * GAP, w,
+    x: Math.random() * (W - w) + w / 2,
+    vx: type === "ice" ? speed * 1.25 : speed,
+    type, fish: i > 1 && Math.random() < 0.35, bob: 0, landed: false,
+  };
+}
+
+function reset() {
+  platforms = [ { i: 0, y: 0, w: 170, x: PENGU_X, vx: 0, type: "base", fish: false, bob: 0, landed: true } ];
+  for (let i = 1; i < 6; i++) platforms.push(makePlatform(i));
+  pengu = { x: PENGU_X, y: 0, vy: 0, jumping: false, falling: false, from: 0, tJ: 0, sq: 1, plat: platforms[0], offset: 0, blink: 0 };
+  camY = 0; score = 0; combo = 0; particles = []; floaters = []; shake = 0; t = 0; flash = 0; newBest = false;
+}
+reset();
+state = "menu";
+
+// ---------- Input ----------
+function tap() {
+  audio();
+  if (state === "menu") { state = "play"; return; }
+  if (state === "over") { if (t > 0.6) { reset(); state = "play"; } return; }
+  if (state === "play" && !pengu.jumping && !pengu.falling) {
+    pengu.jumping = true; pengu.tJ = 0; pengu.from = pengu.y; pengu.sq = 0.6;
+    sfx.jump();
+  }
+}
+addEventListener("pointerdown", (e) => { e.preventDefault(); tap(); });
+addEventListener("keydown", (e) => { if (e.code === "Space" || e.code === "ArrowUp") { e.preventDefault(); tap(); } });
+
+// ---------- Effects ----------
+function burst(x, y, n, colors, spd = 220) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * Math.PI * 2, s = spd * (0.3 + Math.random());
+    particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 120, life: 0.6 + Math.random() * 0.4, c: colors[i % colors.length], r: 2 + Math.random() * 4 });
+  }
+}
+function floatText(x, y, text, color, size = 26) { floaters.push({ x, y, text, color, size, life: 1 }); }
+
+// ---------- Update ----------
+const JUMP_T = 0.42;
+function update(dt) {
+  t += dt;
+  // platforms move
+  for (const p of platforms) {
+    if (p.vx && !(p === pengu.plat && pengu.plat.landed && p.i !== 0 && false)) {
+      p.x += p.vx * dt;
+      if (p.x < p.w / 2) { p.x = p.w / 2; p.vx *= -1; }
+      if (p.x > W - p.w / 2) { p.x = W - p.w / 2; p.vx *= -1; }
+    }
+    p.bob *= 0.85;
+  }
+
+  if (state === "play") {
+    // stand on moving platform
+    if (!pengu.jumping && !pengu.falling) pengu.x = pengu.plat.x + pengu.offset;
+
+    if (pengu.jumping) {
+      pengu.tJ += dt;
+      const p = Math.min(1, pengu.tJ / JUMP_T);
+      const target = pengu.from - GAP;
+      // ease: rise above target then settle
+      pengu.y = pengu.from + (target - pengu.from) * p - Math.sin(p * Math.PI) * 60;
+      pengu.sq += (1.25 - pengu.sq) * 0.3;
+      if (p >= 1) {
+        pengu.jumping = false;
+        const next = platforms.find((q) => q.i === pengu.plat.i + 1);
+        const dx = pengu.x - next.x;
+        if (Math.abs(dx) <= next.w / 2 + 16) {
+          // landed!
+          pengu.plat = next; pengu.offset = dx; next.landed = true; next.vx = 0; next.bob = 10;
+          pengu.y = next.y; pengu.sq = 0.55;
+          const perfect = Math.abs(dx) < 15;
+          if (perfect) {
+            combo++;
+            pengu.offset = 0;
+            const pts = 1 + combo;
+            score += pts;
+            sfx.perfect(combo);
+            floatText(pengu.x, pengu.y - 80, combo > 1 ? `PERFECT x${combo}` : "PERFECT", "#ffe066", 24 + Math.min(combo, 6) * 2);
+            burst(next.x, next.y, 18 + combo * 3, ["#ffe066", "#ffffff", "#7bdff2"]);
+            flash = 0.25; shake = 4 + combo;
+          } else {
+            combo = 0; score += 1;
+            sfx.land(); burst(pengu.x, next.y, 6, ["#ffffff", "#cde7ff"], 120); shake = 2;
+          }
+          floatText(pengu.x + 40, pengu.y - 40, "+" + (perfect ? 1 + combo : 1), "#ffffff", 20);
+          if (next.fish) { next.fish = false; fishBank++; localStorage.setItem("pengu_fish", fishBank); sfx.fish(); floatText(next.x, next.y - 110, "🐟 +1", "#7bdff2", 22); }
+          // spawn more
+          const top = platforms[platforms.length - 1].i;
+          platforms.push(makePlatform(top + 1));
+          platforms = platforms.filter((q) => q.i >= pengu.plat.i - 2);
+        } else {
+          pengu.falling = true; pengu.vy = -150; combo = 0;
+          shake = 10;
+        }
+      }
+    }
+    if (pengu.falling) {
+      pengu.vy += 1800 * dt; pengu.y += pengu.vy * dt;
+      if (pengu.y - camY > H * 0.35) gameOver();
+    }
+    pengu.sq += (1 - pengu.sq) * 0.2;
+  }
+
+  // camera follows the penguin's platform
+  const targetCam = (pengu.falling ? pengu.plat.y : pengu.plat.y) - 0;
+  camY += (targetCam - camY) * Math.min(1, dt * 6);
+
+  for (const p of particles) { p.vy += 600 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }
+  particles = particles.filter((p) => p.life > 0);
+  for (const f of floaters) { f.y -= 50 * dt; f.life -= dt * 1.1; }
+  floaters = floaters.filter((f) => f.life > 0);
+  shake *= 0.88; flash = Math.max(0, flash - dt);
+  pengu.blink = (t % 3.3) < 0.12;
+}
+
+function gameOver() {
+  state = "over"; t = 0; sfx.splash();
+  burst(pengu.x, camY + H * 0.33, 40, ["#7bdff2", "#ffffff", "#b2f7ef"], 300);
+  if (score > best) { best = score; newBest = true; localStorage.setItem("pengu_best", best); }
+}
+
+// ---------- Draw ----------
+function worldToScreenY(y) { return y - camY + H * 0.68; }
+
+function drawBackground() {
+  const h = Math.min(1, score / 80);
+  const top = `hsl(${220 - h * 60}, 60%, ${18 + h * 6}%)`;
+  const bot = `hsl(${200 - h * 160}, 70%, ${45 - h * 8}%)`;
+  const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, top); g.addColorStop(1, bot);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // stars / snow
+  for (let i = 0; i < 60; i++) {
+    const sx = (i * 97.3) % W, sy = ((i * 53.7 + t * (10 + (i % 5) * 8) - camY * 0.2) % H + H) % H;
+    ctx.globalAlpha = 0.25 + (i % 4) * 0.12; ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.arc(sx, sy, 1 + (i % 3), 0, 7); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  // parallax icebergs
+  ctx.fillStyle = "rgba(255,255,255,0.08)";
+  for (let i = 0; i < 4; i++) {
+    const bx = (i * 140 + 30) % W, by = ((i * 230 - camY * 0.35) % (H + 200) + H + 200) % (H + 200) - 100;
+    ctx.beginPath(); ctx.moveTo(bx - 70, by + 60); ctx.lineTo(bx - 20, by - 50); ctx.lineTo(bx + 30, by - 10); ctx.lineTo(bx + 80, by + 60); ctx.fill();
+  }
+}
+
+function drawSea() {
+  const seaY = worldToScreenY(pengu.plat.y) + H * 0.35 - 20;
+  if (seaY > H + 40) return;
+  ctx.fillStyle = "#1b6ca8";
+  ctx.beginPath(); ctx.moveTo(0, H);
+  for (let x = 0; x <= W; x += 10) ctx.lineTo(x, seaY + Math.sin(x * 0.04 + t * 3) * 6);
+  ctx.lineTo(W, H); ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.25)";
+  for (let x = 0; x <= W; x += 40) ctx.fillRect(x + Math.sin(t * 2 + x) * 8, seaY + 14, 18, 3);
+}
+
+function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); }
+
+function drawPlatform(p) {
+  const y = worldToScreenY(p.y) + p.bob;
+  if (y < -60 || y > H + 60) return;
+  const ice = p.type === "ice";
+  ctx.fillStyle = "rgba(0,0,0,0.18)"; roundRect(p.x - p.w / 2 + 4, y + 8, p.w, 22, 11); ctx.fill();
+  ctx.fillStyle = ice ? "#9be7ff" : "#eaf6ff"; roundRect(p.x - p.w / 2, y, p.w, 22, 11); ctx.fill();
+  ctx.fillStyle = ice ? "#5cc8ef" : "#b9dcf2"; roundRect(p.x - p.w / 2, y + 12, p.w, 12, 8); ctx.fill();
+  // perfect-zone hint
+  ctx.fillStyle = "rgba(255,224,102,0.55)"; roundRect(p.x - 15, y + 2, 30, 6, 3); ctx.fill();
+  if (p.fish) drawFish(p.x, y - 18 + Math.sin(t * 4 + p.i) * 4);
+}
+
+function drawFish(x, y) {
+  ctx.fillStyle = "#ffb703";
+  ctx.beginPath(); ctx.ellipse(x, y, 13, 8, 0, 0, 7); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x - 10, y); ctx.lineTo(x - 20, y - 8); ctx.lineTo(x - 20, y + 8); ctx.fill();
+  ctx.fillStyle = "#222"; ctx.beginPath(); ctx.arc(x + 6, y - 2, 2, 0, 7); ctx.fill();
+}
+
+function drawPengu() {
+  const x = pengu.x, y = worldToScreenY(pengu.y);
+  const sy = pengu.sq, sx = 1 / Math.sqrt(sy);
+  ctx.save(); ctx.translate(x, y); ctx.scale(sx, sy);
+  if (pengu.falling) ctx.rotate(Math.sin(t * 20) * 0.4);
+  // feet
+  ctx.fillStyle = "#ffa62b";
+  ctx.beginPath(); ctx.ellipse(-11, -3, 9, 5, 0, 0, 7); ctx.ellipse(11, -3, 9, 5, 0, 0, 7); ctx.fill();
+  // body
+  ctx.fillStyle = "#2d3561"; ctx.beginPath(); ctx.ellipse(0, -30, 25, 30, 0, 0, 7); ctx.fill();
+  // wings
+  const flap = pengu.jumping || pengu.falling ? Math.sin(t * 40) * 0.6 + 0.8 : 0.2;
+  for (const s of [-1, 1]) {
+    ctx.save(); ctx.translate(s * 22, -34); ctx.rotate(s * flap);
+    ctx.beginPath(); ctx.ellipse(s * 4, 10, 6, 15, 0, 0, 7); ctx.fill(); ctx.restore();
+  }
+  // belly
+  ctx.fillStyle = "#fdf6e3"; ctx.beginPath(); ctx.ellipse(0, -24, 17, 21, 0, 0, 7); ctx.fill();
+  // eyes
+  ctx.fillStyle = "#fff";
+  for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(s * 8, -43, 6, pengu.blink ? 1 : 7, 0, 0, 7); ctx.fill(); }
+  if (!pengu.blink) {
+    ctx.fillStyle = state === "over" ? "#5b2a86" : "#111";
+    const look = pengu.jumping ? -2 : 0;
+    for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(s * 8, -42 + look, 3.2, 0, 7); ctx.fill(); }
+  }
+  // cheeks + beak
+  ctx.fillStyle = "#ff8fa3"; for (const s of [-1, 1]) { ctx.beginPath(); ctx.ellipse(s * 15, -34, 4, 2.5, 0, 0, 7); ctx.fill(); }
+  ctx.fillStyle = "#ffa62b"; ctx.beginPath(); ctx.moveTo(-5, -36); ctx.lineTo(5, -36); ctx.lineTo(0, -29); ctx.fill();
+  ctx.restore();
+}
+
+function text(str, x, y, size, color = "#fff", align = "center", stroke = true) {
+  ctx.font = `900 ${size}px "Trebuchet MS", "Segoe UI", sans-serif`;
+  ctx.textAlign = align; ctx.textBaseline = "middle";
+  if (stroke) { ctx.lineWidth = size / 6; ctx.strokeStyle = "rgba(0,0,0,0.35)"; ctx.strokeText(str, x, y); }
+  ctx.fillStyle = color; ctx.fillText(str, x, y);
+}
+
+function draw() {
+  ctx.save();
+  if (shake > 0.2) ctx.translate((Math.random() - 0.5) * shake, (Math.random() - 0.5) * shake);
+  drawBackground();
+  drawSea();
+  for (const p of platforms) drawPlatform(p);
+  if (state !== "over" || pengu.y - camY < H * 0.35) drawPengu();
+  for (const p of particles) { ctx.globalAlpha = Math.max(0, p.life); ctx.fillStyle = p.c; ctx.beginPath(); ctx.arc(p.x, worldToScreenY(p.y + 0) - 0, p.r, 0, 7); ctx.fill(); }
+  ctx.globalAlpha = 1;
+  for (const f of floaters) { ctx.globalAlpha = Math.max(0, f.life); text(f.text, f.x, worldToScreenY(f.y), f.size, f.color); }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+  if (flash > 0) { ctx.fillStyle = `rgba(255,255,255,${flash * 0.5})`; ctx.fillRect(0, 0, W, H); }
+
+  // HUD
+  if (state === "play" || state === "over") {
+    text(score, W / 2, 70, 64);
+    text(`🐟 ${fishBank}`, W - 20, 30, 20, "#ffe066", "right");
+    text(`BEST ${best}`, 20, 30, 18, "#cde7ff", "left");
+    if (combo > 1 && state === "play") text(`🔥 COMBO x${combo}`, W / 2, 118, 20, "#ffb703");
+  }
+  if (state === "menu") {
+    ctx.fillStyle = "rgba(0,0,0,0.25)"; ctx.fillRect(0, 0, W, H);
+    text("PENGU HOP", W / 2, 180, 58, "#ffffff");
+    text("Chạm để nhảy lên tảng băng", W / 2, 250, 20, "#cde7ff");
+    text("Đáp đúng giữa vạch vàng = PERFECT", W / 2, 280, 18, "#ffe066");
+    text(`BEST ${best}   🐟 ${fishBank}`, W / 2, 320, 20, "#cde7ff");
+    const pulse = 1 + Math.sin(t * 5) * 0.06;
+    ctx.save(); ctx.translate(W / 2, 600); ctx.scale(pulse, pulse); text("CHẠM ĐỂ CHƠI", 0, 0, 30, "#ffe066"); ctx.restore();
+  }
+  if (state === "over") {
+    ctx.fillStyle = `rgba(0,0,0,${Math.min(0.5, t)})`; ctx.fillRect(0, 0, W, H);
+    const k = Math.min(1, t * 3);
+    ctx.save(); ctx.translate(W / 2, 260); ctx.scale(k, k);
+    text("TÕM!", 0, -40, 54, "#7bdff2");
+    text(newBest ? "🏆 KỶ LỤC MỚI!" : `Kỷ lục: ${best}`, 0, 30, 26, newBest ? "#ffe066" : "#cde7ff");
+    text(`Điểm: ${score}`, 0, 80, 34, "#ffffff");
+    ctx.restore();
+    if (t > 0.6) { const pulse = 1 + Math.sin(t * 5) * 0.06; ctx.save(); ctx.translate(W / 2, 560); ctx.scale(pulse, pulse); text("CHẠM ĐỂ CHƠI LẠI", 0, 0, 28, "#ffe066"); ctx.restore(); }
+  }
+}
+
+let last = performance.now();
+function loop(now) {
+  const dt = Math.min(0.033, (now - last) / 1000); last = now;
+  update(dt); draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+
+<!-- Floating Monetization Bar injected by MoneyHunter247 -->
+<div style="position:fixed;bottom:12px;right:12px;z-index:999999;background:rgba(15,23,42,0.95);border:1px solid #10b981;border-radius:12px;padding:8px 14px;display:flex;align-items:center;gap:10px;font-family:system-ui,sans-serif;box-shadow:0 8px 25px rgba(0,0,0,0.5);">
+  <span style="color:#f8fafc;font-size:13px;font-weight:600;">⚡ Want this full source code?</span>
+  <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=xaductrung%40gmail.com&item_name=Commercial+Source+Code+License&amount=49&currency_code=USD&return=https%3A%2F%2Ffiles.catbox.moe%2Fytghdr.zip" target="_blank" style="background:#ffc439;color:#111827;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">💳 Buy Source ($49 PayPal)</a>
+  <a href="https://xaductrung-rgb.github.io" target="_blank" style="background:#10b981;color:#022c22;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">🛒 All Bundles</a>
+</div>
+</body>
+</html>

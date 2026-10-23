@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Chạy Trốn Cậu Vàng - Game 3 Làn Siêu Gây Nghiện</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    canvas {
+      display: block;
+      touch-action: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-slate-900 border-b border-slate-700 shrink-0">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl">🦆💨🐕</span>
+      <div>
+        <h1 class="font-extrabold text-base sm:text-lg leading-tight text-amber-300">CHẠY TRỐN CẬU VÀNG (3 LÀN SIÊU NGHIỆN)</h1>
+        <p class="text-slate-400 text-xs">Chạm Trái / Phải (hoặc phím ⬅️ ➡️) để lách làn! Chạm Giữa / ⬆️ để Nhảy!</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button id="btnSkin" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-400 text-slate-900 shadow">
+        🎭 Nhân vật: <span id="skinName">Vịt Mỏ Chu</span>
+      </button>
+      <button id="btnSound" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-700 text-white">
+        🔊 Tiếng
+      </button>
+    </div>
+  </div>
+
+  <div class="relative flex-1 w-full overflow-hidden">
+    <canvas id="gameCanvas" class="w-full h-full"></canvas>
+  </div>
+
+  <script>
+    class AddictiveAudio {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+        this.scaleNotes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25, 587.33, 659.25, 783.99, 1046.50];
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      }
+      woosh() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(190, now);
+        osc.frequency.exponentialRampToValueAtTime(420, now + 0.07);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.09);
+      }
+      jump() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(240, now);
+        osc.frequency.exponentialRampToValueAtTime(640, now + 0.15);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      }
+      ding(comboIndex) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        const note = this.scaleNotes[Math.min(comboIndex, this.scaleNotes.length - 1)];
+        osc.frequency.setValueAtTime(note, now);
+        osc.frequency.exponentialRampToValueAtTime(note * 1.04, now + 0.09);
+        gain.gain.setValueAtTime(0.24, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.13);
+      }
+      slip() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(480, now);
+        osc.frequency.exponentialRampToValueAtTime(95, now + 0.25);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.27);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.28);
+      }
+      fever() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        [523.25, 659.25, 783.99, 1046.5].forEach((n, i) => {
+          const now = this.ctx.currentTime + i * 0.055;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(n, now);
+          gain.gain.setValueAtTime(0.14, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.13);
+        });
+      }
+    }
+
+    const sfx = new AddictiveAudio();
+
+    const SKINS = [
+      { name: 'Vịt Mỏ Chu', body: '#FFD93D', beak: '#FF5722', pants: '#3B82F6', hat: 'none' },
+      { name: 'Corgi Mông Bự', body: '#F4A261', beak: '#FF758F', pants: '#10B981', hat: 'ears' },
+      { name: 'Mèo Đội Nồi', body: '#A8DADC', beak: '#FF99AC', pants: '#8B5CF6', hat: 'pot' },
+      { name: 'Heo Quần Hoa', body: '#FFAFCC', beak: '#FB6F92', pants: '#F59E0B', hat: 'crown' }
+    ];
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let W = 800;
+    let H = 500;
+    function resize() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      W = Math.max(320, Math.floor(rect.width));
+      H = Math.max(320, Math.floor(rect.height));
+      canvas.width = W;
+      canvas.height = H;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    let skinIdx = 0;
+    let state = 'PLAYING';
+    let distance = 0;
+    let bestDistance = 120;
+    let coins = 0;
+    let comboNote = 0;
+    let comboTimer = 0;
+    let speed = 5.6;
+    let roadOffset = 0;
+    let spawnDistCounter = 0;
+    let screenShake = 0;
+
+    const player = {
+      lane: 1,
+      visualX: 0,
+      y: 0,
+      jumpZ: 0,
+      vz: 0,
+      tilt: 0,
+      legPhase: 0,
+      pantsLostTimer: 0,
+      invincibleTimer: 0,
+      feverGauge: 0,
+      feverTimer: 0
+    };
+
+    let rows = [];
+    let particles = [];
+    let popups = [];
+    let sideProps = [];
+
+    function getLaneX(laneIndex, yPos) {
+      const t = Math.max(0, Math.min(1, (yPos - 45) / (H - 45)));
+      const roadHalfW = (75 + t * 135) * Math.min(1.15, W / 520);
+      const center = W / 2;
+      const laneOffset = (laneIndex - 1) * (roadHalfW * 0.66);
+      return center + laneOffset;
+    }
+
+    function getRoadHalfWidth(yPos) {
+      const t = Math.max(0, Math.min(1, (yPos - 45) / (H - 45)));
+      return (75 + t * 135) * Math.min(1.15, W / 520);
+    }
+
+    function initGame() {
+      state = 'PLAYING';
+      distance = 0;
+      coins = 0;
+      comboNote = 0;
+      comboTimer = 0;
+      speed = 5.6;
+      spawnDistCounter = 0;
+      rows = [];
+      particles = [];
+      popups = [];
+      sideProps = [];
+
+      player.lane = 1;
+      player.y = H - 96;
+      player.visualX = getLaneX(1, player.y);
+      player.jumpZ = 0;
+      player.vz = 0;
+      player.tilt = 0;
+      player.pantsLostTimer = 0;
+      player.invincibleTimer = 0;
+      player.feverGauge = 0;
+      player.feverTimer = 0;
+
+      for (let y = 60; y < H; y += 75) {
+        sideProps.push({ y, leftEmoji: '🌴', rightEmoji: '🏠' });
+      }
+
+      spawnFoodLine(1, 140);
+      spawnPopup(W / 2, H / 2 - 30, '👈 BẤM TRÁI / PHẢI ĐỂ LÁCH LÀN! 👉', '#FACC15', 1.25);
+    }
+
+    function spawnFoodLine(lane, startY = 48) {
+      const emojis = ['🧋', '🍗', '🌭', '🍦'];
+      const pick = emojis[Math.floor(Math.random() * emojis.length)];
+      for (let i = 0; i < 4; i++) {
+        rows.push({
+          y: startY - i * 38,
+          lane,
+          kind: 'food',
+          emoji: pick,
+          tall: false,
+          hit: false,
+          nearMissed: false
+        });
+      }
+    }
+
+    function spawnPattern() {
+      const patternRoll = Math.random();
+
+      if (patternRoll < 0.36) {
+        const blockLane = Math.floor(Math.random() * 3);
+        const foodLane = (blockLane + (Math.random() < 0.5 ? 1 : 2)) % 3;
+        const obs = pickObstacle();
+        rows.push({ y: 45, lane: blockLane, ...obs, hit: false, nearMissed: false });
+        spawnFoodLine(foodLane, 45);
+      } else if (patternRoll < 0.76) {
+        const safeLane = Math.floor(Math.random() * 3);
+        for (let l = 0; l < 3; l++) {
+          if (l === safeLane) {
+            rows.push({
+              y: 45, lane: l,
+              kind: 'food',
+              emoji: Math.random() < 0.16 ? '🩲' : '🧋',
+              hit: false
+            });
+          } else {
+            const obs = pickObstacle();
+            rows.push({ y: 45, lane: l, ...obs, hit: false, nearMissed: false });
+          }
+        }
+      } else {
+        const springLane = Math.floor(Math.random() * 3);
+        for (let l = 0; l < 3; l++) {
+          if (l === springLane) {
+            rows.push({ y: 45, lane: l, kind: 'spring', emoji: '👟', tall: false, hit: false });
+          } else {
+            rows.push({
+              y: 45, lane: l,
+              kind: 'hazard',
+              emoji: Math.random() < 0.5 ? '💩' : '🍌',
+              name: 'Bẫy Thấp',
+              tall: false, hit: false, nearMissed: false
+            });
+          }
+        }
+      }
+    }
+
+    function pickObstacle() {
+      const list = [
+        { kind: 'hazard', emoji: '💩', name: 'Bãi Phân Chó', tall: false },
+        { kind: 'hazard', emoji: '🍌', name: 'Vỏ Chuối Trượt', tall: false },
+        { kind: 'hazard', emoji: '🚧', name: 'Rào Chắn (Nhảy qua!)', tall: false },
+        { kind: 'hazard', emoji: '🛵', name: 'Ninja Lead Ngược Chiều', tall: true },
+        { kind: 'hazard', emoji: '🩴', name: 'Dép Tổ Ong Khổng Lồ', tall: false }
+      ];
+      return list[Math.floor(Math.random() * list.length)];
+    }
+
+    function moveLane(dir) {
+      if (state !== 'PLAYING') return;
+      const next = Math.max(0, Math.min(2, player.lane + dir));
+      if (next !== player.lane) {
+        player.lane = next;
+        player.tilt = dir * 0.35;
+        sfx.woosh();
+      }
+    }
+
+    function doJump() {
+      if (state !== 'PLAYING') return;
+      if (player.jumpZ <= 2) {
+        player.vz = 10.5;
+        sfx.jump();
+        spawnPopup(player.visualX, player.y - 40, 'NHẢY LỘN NHÀO!', '#38BDF8', 1.0);
+      }
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (state === 'GAMEOVER') {
+        if (e.code === 'Space' || e.code === 'Enter' || e.code === 'ArrowLeft' || e.code === 'ArrowRight' || e.code === 'ArrowUp') {
+          e.preventDefault();
+          initGame();
+        }
+        return;
+      }
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+        e.preventDefault();
+        moveLane(-1);
+      } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+        e.preventDefault();
+        moveLane(1);
+      } else if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') {
+        e.preventDefault();
+        doJump();
+      }
+    });
+
+    canvas.addEventListener('pointerdown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (W / rect.width);
+
+      if (state === 'GAMEOVER') {
+        initGame();
+        return;
+      }
+
+      if (x < W * 0.37) {
+        moveLane(-1);
+      } else if (x > W * 0.63) {
+        moveLane(1);
+      } else {
+        doJump();
+      }
+    });
+
+    function spawnPopup(x, y, text, color = '#FACC15', scale = 1) {
+      popups.push({ x, y, vy: -1.8, text, color, scale, life: 45 });
+    }
+
+    function spawnParticles(x, y, color, count = 10, emoji = null) {
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const s = 2 + Math.random() * 5;
+        particles.push({
+          x, y,
+          vx: Math.cos(a) * s,
+          vy: Math.sin(a) * s - 1.5,
+          r: 4 + Math.random() * 4,
+          color,
+          emoji: i < 2 ? emoji : null,
+          life: 24 + Math.floor(Math.random() * 12)
+        });
+      }
+    }
+
+    function update() {
+      if (screenShake > 0) screenShake *= 0.84;
+      if (state !== 'PLAYING') return;
+
+      speed = Math.min(11.2, 5.6 + distance / 380);
+      const currentSpeed = player.feverTimer > 0 ? speed * 1.35 : speed;
+
+      distance += currentSpeed * 0.08;
+      roadOffset = (roadOffset + currentSpeed) % 48;
+      spawnDistCounter += currentSpeed;
+
+      if (comboTimer > 0) {
+        comboTimer--;
+        if (comboTimer === 0) comboNote = 0;
+      }
+
+      const minGap = Math.max(125, 165 - speed * 3);
+      if (spawnDistCounter >= minGap) {
+        spawnDistCounter = 0;
+        spawnPattern();
+      }
+
+      for (const sp of sideProps) {
+        sp.y += currentSpeed * 0.9;
+        if (sp.y > H + 30) sp.y = 55;
+      }
+
+      player.y = H - 96;
+      const targetX = getLaneX(player.lane, player.y);
+      player.visualX += (targetX - player.visualX) * 0.34;
+      player.tilt *= 0.82;
+      player.legPhase += currentSpeed * 0.09;
+
+      if (player.jumpZ > 0 || player.vz !== 0) {
+        player.jumpZ += player.vz;
+        player.vz -= 0.72;
+        if (player.jumpZ <= 0) {
+          player.jumpZ = 0;
+          player.vz = 0;
+        }
+      }
+
+      if (player.invincibleTimer > 0) player.invincibleTimer--;
+      if (player.feverTimer > 0) player.feverTimer--;
+
+      if (player.pantsLostTimer > 0) {
+        player.pantsLostTimer--;
+        if (player.pantsLostTimer === 0) {
+          spawnPopup(player.visualX, player.y - 45, '👖 KÉO LẠI QUẦN ĐÙI LÊN RỒI!', '#10B981', 1.15);
+        }
+      }
+
+      for (let i = rows.length - 1; i >= 0; i--) {
+        const it = rows[i];
+        const depthFactor = 0.55 + Math.max(0, (it.y - 45) / (H - 45)) * 0.65;
+        it.y += currentSpeed * depthFactor;
+
+        const itemX = getLaneX(it.lane, it.y);
+
+        if (player.feverTimer > 0 && it.kind === 'food' && it.y > 140) {
+          it.lane += (player.lane - it.lane) * 0.25;
+        }
+
+        const dy = Math.abs(it.y - player.y);
+        const sameLane = Math.abs(it.lane - player.lane) < 0.45;
+
+        if (!it.hit && dy < 26 && sameLane) {
+          if (it.kind === 'food') {
+            it.hit = true;
+            coins++;
+            distance += 3;
+            sfx.ding(comboNote);
+            comboNote++;
+            comboTimer = 55;
+
+            if (it.emoji === '🩲') {
+              triggerFeverMode();
+            } else {
+              player.feverGauge = Math.min(100, player.feverGauge + 10);
+              if (player.feverGauge >= 100 && player.feverTimer <= 0) {
+                triggerFeverMode();
+              }
+            }
+
+            spawnParticles(itemX, it.y, '#FACC15', 8, it.emoji);
+            if (comboNote >= 4) {
+              spawnPopup(itemX, it.y - 20, `ĐỚP COMBO x${comboNote}!`, '#FACC15', 1.05);
+            }
+            rows.splice(i, 1);
+            continue;
+          } else if (it.kind === 'spring') {
+            it.hit = true;
+            player.vz = 13.5;
+            sfx.jump();
+            spawnParticles(itemX, it.y, '#38BDF8', 12, '👟');
+            spawnPopup(itemX, it.y - 30, '👟 GIÀY LÒ XO BẬT CAO!', '#38BDF8', 1.2);
+            rows.splice(i, 1);
+            continue;
+          } else if (it.kind === 'hazard') {
+            if (!it.tall && player.jumpZ > 24) {
+              if (!it.nearMissed) {
+                it.nearMissed = true;
+                distance += 8;
+                sfx.ding(8);
+                spawnPopup(player.visualX, player.y - 55, `🦘 NHẢY QUA ${it.emoji}! +10m`, '#10B981', 1.1);
+              }
+              continue;
+            }
+
+            if (player.feverTimer > 0) {
+              it.hit = true;
+              distance += 12;
+              sfx.ding(10);
+              screenShake = 6;
+              spawnParticles(itemX, it.y, '#EF4444', 14, '💥');
+              spawnPopup(itemX, it.y - 25, `💥 HÚC BAY ${it.emoji}! +15m`, '#FACC15', 1.2);
+              rows.splice(i, 1);
+              continue;
+            }
+
+            if (player.invincibleTimer <= 0) {
+              it.hit = true;
+              handleObstacleHit(it);
+              rows.splice(i, 1);
+              continue;
+            }
+          }
+        }
+
+        if (it.y > H + 50) {
+          rows.splice(i, 1);
+        }
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.2;
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+
+      for (let i = popups.length - 1; i >= 0; i--) {
+        const pp = popups[i];
+        pp.y += pp.vy;
+        pp.life--;
+        if (pp.life <= 0) popups.splice(i, 1);
+      }
+    }
+
+    function triggerFeverMode() {
+      player.feverGauge = 0;
+      player.feverTimer = 260;
+      player.pantsLostTimer = 0;
+      sfx.fever();
+      spawnPopup(W / 2, H / 2 - 20, '🩲 HÓA SIÊU NHÂN QUẦN SỊP ĐỎ: HÚC BAY TẤT CẢ! 🔥', '#EF4444', 1.3);
+    }
+
+    function handleObstacleHit(obs) {
+      sfx.slip();
+      screenShake = 14;
+      comboNote = 0;
+
+      if (player.pantsLostTimer <= 0) {
+        player.pantsLostTimer = 380;
+        player.invincibleTimer = 45;
+        spawnParticles(player.visualX, player.y, '#3B82F6', 14, '👖');
+        spawnPopup(
+          player.visualX,
+          player.y - 45,
+          `😱 TRƯỢT ${obs.emoji}! CHÓ CẠP TỤT QUẦN ĐÙI RỒI!`,
+          '#EF4444',
+          1.22
+        );
+      } else {
+        state = 'GAMEOVER';
+        bestDistance = Math.max(bestDistance, Math.floor(distance));
+        spawnParticles(player.visualX, player.y, '#EF4444', 18, '🐕');
+      }
+    }
+
+    function drawRoadAndWorld() {
+      ctx.fillStyle = player.feverTimer > 0 ? '#FEE2E2' : '#BAE6FD';
+      ctx.fillRect(0, 0, W, 55);
+
+      ctx.fillStyle = '#86EFAC';
+      ctx.fillRect(0, 50, W, H - 50);
+
+      const topY = 48;
+      const botY = H;
+      const topHalf = getRoadHalfWidth(topY);
+      const botHalf = getRoadHalfWidth(botY);
+      const cx = W / 2;
+
+      ctx.fillStyle = '#334155';
+      ctx.beginPath();
+      ctx.moveTo(cx - topHalf, topY);
+      ctx.lineTo(cx + topHalf, topY);
+      ctx.lineTo(cx + botHalf, botY);
+      ctx.lineTo(cx - botHalf, botY);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.lineWidth = 6;
+      ctx.strokeStyle = '#F8FAFC';
+      ctx.beginPath();
+      ctx.moveTo(cx - topHalf, topY);
+      ctx.lineTo(cx - botHalf, botY);
+      ctx.moveTo(cx + topHalf, topY);
+      ctx.lineTo(cx + botHalf, botY);
+      ctx.stroke();
+
+      ctx.strokeStyle = '#FACC15';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([18, 18]);
+      ctx.lineDashOffset = -roadOffset * 2;
+
+      for (const divider of [-0.33, 0.33]) {
+        ctx.beginPath();
+        ctx.moveTo(cx + topHalf * divider, topY);
+        ctx.lineTo(cx + botHalf * divider, botY);
+        ctx.stroke();
+      }
+      ctx.setLineDash([]);
+
+      const distToRecord = bestDistance - distance;
+      if (distToRecord > -15 && distToRecord < 65) {
+        const recordY = player.y - distToRecord * 4.5;
+        if (recordY > 52 && recordY < H) {
+          const rw = getRoadHalfWidth(recordY);
+          ctx.fillStyle = 'rgba(250, 204, 21, 0.85)';
+          ctx.fillRect(cx - rw, recordY - 6, rw * 2, 12);
+          ctx.fillStyle = '#0F172A';
+          ctx.font = 'extrabold 11px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText(`🏁 KỶ LỤC: ${bestDistance}m 🏁`, cx, recordY + 4);
+        }
+      }
+
+      for (const sp of sideProps) {
+        const rw = getRoadHalfWidth(sp.y);
+        const scale = 0.6 + ((sp.y - 50) / H) * 0.7;
+        ctx.font = `${Math.round(24 * scale)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillText(sp.leftEmoji, cx - rw - 32 * scale, sp.y);
+        ctx.fillText(sp.rightEmoji, cx + rw + 32 * scale, sp.y);
+      }
+    }
+
+    function drawRows() {
+      const sorted = [...rows].sort((a, b) => a.y - b.y);
+      for (const it of sorted) {
+        if (it.y < 46) continue;
+        const x = getLaneX(it.lane, it.y);
+        const scale = 0.55 + ((it.y - 45) / (H - 45)) * 0.65;
+
+        ctx.save();
+        ctx.translate(x, it.y);
+        ctx.scale(scale, scale);
+
+        ctx.fillStyle = it.kind === 'hazard' ? 'rgba(239, 68, 68, 0.32)' : 'rgba(250, 204, 21, 0.32)';
+        ctx.beginPath();
+        ctx.ellipse(0, 14, 22, 9, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = it.kind === 'hazard' ? '#FEE2E2' : '#FEF9C3';
+        ctx.strokeStyle = it.kind === 'hazard' ? '#EF4444' : '#F59E0B';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, 22, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.font = '26px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(it.emoji, 0, 2);
+
+        ctx.restore();
+      }
+    }
+
+    function drawPlayerAndDog() {
+      const skin = SKINS[skinIdx];
+      const px = player.visualX;
+      const py = player.y - player.jumpZ;
+
+      ctx.fillStyle = 'rgba(0,0,0,0.25)';
+      const shadowScale = Math.max(0.45, 1 - player.jumpZ / 110);
+      ctx.beginPath();
+      ctx.ellipse(px, player.y + 22, 24 * shadowScale, 9 * shadowScale, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.rotate(player.tilt + Math.sin(player.legPhase) * 0.08);
+
+      if (player.feverTimer > 0) {
+        ctx.fillStyle = '#EF4444';
+        ctx.beginPath();
+        ctx.moveTo(-18, -8);
+        ctx.lineTo(-34, 26 + Math.sin(player.legPhase * 2) * 5);
+        ctx.lineTo(34, 26 - Math.sin(player.legPhase * 2) * 5);
+        ctx.lineTo(18, -8);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      const legL = Math.sin(player.legPhase * 1.4) * 10;
+      const legR = -legL;
+      ctx.fillStyle = skin.beak;
+      ctx.strokeStyle = '#0F172A';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.ellipse(-11, 18 + legL * 0.5, 9, 6, -0.2, 0, Math.PI * 2);
+      ctx.ellipse(11, 18 + legR * 0.5, 9, 6, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      const buttWiggle = Math.sin(player.legPhase * 1.4) * 3.5;
+      ctx.fillStyle = skin.body;
+      ctx.beginPath();
+      ctx.ellipse(0, -2, 24, 23, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      if (player.feverTimer > 0) {
+        ctx.fillStyle = '#EF4444';
+        ctx.beginPath();
+        ctx.arc(0, 4, 23, 0.1, Math.PI - 0.1);
+        ctx.fill();
+        ctx.stroke();
+      } else if (player.pantsLostTimer > 0) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(buttWiggle * 0.5, 5, 22, 0.1, Math.PI - 0.1);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.fillStyle = '#F43F5E';
+        ctx.beginPath();
+        ctx.arc(-8 + buttWiggle * 0.4, 12, 3.5, 0, Math.PI * 2);
+        ctx.arc(7 + buttWiggle * 0.4, 11, 3.5, 0, Math.PI * 2);
+        ctx.arc(0 + buttWiggle * 0.4, 18, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillStyle = skin.pants;
+        ctx.beginPath();
+        ctx.arc(buttWiggle * 0.4, 4, 23, 0.1, Math.PI - 0.1);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = skin.body;
+      ctx.beginPath();
+      ctx.ellipse(-25, -2 - legL * 0.4, 7, 12, 0.4, 0, Math.PI * 2);
+      ctx.ellipse(25, -2 - legR * 0.4, 7, 12, -0.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = skin.body;
+      ctx.beginPath();
+      ctx.arc(0, -22, 18, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.beginPath();
+      ctx.arc(-6, -24, 6.5, 0, Math.PI * 2);
+      ctx.arc(6, -24, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#0F172A';
+      ctx.beginPath();
+      ctx.arc(-6, -23, 2.5, 0, Math.PI * 2);
+      ctx.arc(6, -25, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = skin.beak;
+      ctx.beginPath();
+      ctx.ellipse(0, -14, 9, 4.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      if (Math.floor(distance) % 2 === 0) {
+        ctx.fillStyle = '#38BDF8';
+        ctx.beginPath();
+        ctx.arc(20, -30, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      const dogY = player.pantsLostTimer > 0
+        ? H - 36 + Math.sin(player.legPhase * 2) * 4
+        : H - 12 + Math.sin(player.legPhase * 2) * 3;
+      const dogX = px + Math.sin(player.legPhase) * 6;
+
+      ctx.save();
+      ctx.translate(dogX, dogY);
+      ctx.fillStyle = '#D97706';
+      ctx.strokeStyle = '#0F172A';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.arc(0, 0, 22, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.font = '30px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('🐕', 0, 0);
+
+      if (player.pantsLostTimer > 0) {
+        ctx.font = '18px sans-serif';
+        ctx.fillText('👖', 16, -10);
+      }
+      ctx.restore();
+    }
+
+    function drawHUD() {
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.beginPath();
+      ctx.roundRect(12, 8, 220, 42, 12);
+      ctx.fill();
+
+      ctx.fillStyle = '#FACC15';
+      ctx.font = 'extrabold 16px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`🏃 ${Math.floor(distance)}m  |  🧋 ${coins}`, 22, 34);
+
+      const barW = 180;
+      const barX = W / 2 - barW / 2;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
+      ctx.beginPath();
+      ctx.roundRect(barX, 10, barW, 24, 12);
+      ctx.fill();
+
+      const pct = player.feverTimer > 0 ? (player.feverTimer / 260) : (player.feverGauge / 100);
+      ctx.fillStyle = player.feverTimer > 0 ? '#EF4444' : '#EC4899';
+      ctx.beginPath();
+      ctx.roundRect(barX + 3, 13, Math.max(8, (barW - 6) * pct), 18, 9);
+      ctx.fill();
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        player.feverTimer > 0 ? '🩲 SIÊU NHÂN HÚC TẤT CẢ!' : `Năng lượng Siêu Nhân: ${Math.floor(player.feverGauge)}%`,
+        W / 2,
+        26
+      );
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.beginPath();
+      ctx.roundRect(W - 185, 8, 173, 42, 12);
+      ctx.fill();
+
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = player.pantsLostTimer > 0 ? '#FB7185' : '#4ADE80';
+      ctx.fillText(
+        player.pantsLostTimer > 0 ? '😱 ĐANG TỤT QUẦN! CẨN THẬN!' : '👖 Quần Đùi: An Toàn (2 Mạng)',
+        W - 98,
+        33
+      );
+
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.55)';
+      ctx.beginPath();
+      ctx.roundRect(14, H - 46, 92, 34, 10);
+      ctx.roundRect(W - 106, H - 46, 92, 34, 10);
+      ctx.fill();
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('⬅️ QUA TRÁI', 60, H - 25);
+      ctx.fillText('QUA PHẢI ➡️', W - 60, H - 25);
+    }
+
+    function drawGameOver() {
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.84)';
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.font = 'extrabold 26px sans-serif';
+      ctx.fillText('🐕 BỊ CẬU VÀNG TÓM GỌN QUẦN HOA RỒI! 🩲', W / 2, H / 2 - 58);
+
+      const distInt = Math.floor(distance);
+      ctx.fillStyle = '#FACC15';
+      ctx.font = 'bold 21px sans-serif';
+      ctx.fillText(`Chạy được: ${distInt}m  |  Kỷ lục: ${bestDistance}m  |  Trà sữa: ${coins} 🧋`, W / 2, H / 2 - 18);
+
+      const title = distInt >= 400 ? 'Thánh Lách Làn Vũ Trụ' : distInt >= 200 ? 'Vua Chạy Trốn Phố Phường' : 'Thánh Ngố Hay Trượt Chuối';
+      ctx.fillStyle = '#A7F3D0';
+      ctx.font = '15px sans-serif';
+      ctx.fillText(`Danh hiệu đạt được: "${title}"`, W / 2, H / 2 + 14);
+
+      ctx.fillStyle = '#F59E0B';
+      ctx.beginPath();
+      ctx.roundRect(W / 2 - 135, H / 2 + 36, 270, 46, 14);
+      ctx.fill();
+
+      ctx.fillStyle = '#0F172A';
+      ctx.font = 'extrabold 16px sans-serif';
+      ctx.fillText('🔄 CHẠM HOẶC BẤM SPACE CHƠI LẠI!', W / 2, H / 2 + 64);
+    }
+
+    function render() {
+      ctx.save();
+      if (screenShake > 0.5) {
+        ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+      }
+
+      drawRoadAndWorld();
+      drawRows();
+      drawPlayerAndDog();
+
+      for (const p of particles) {
+        if (p.emoji) {
+          ctx.font = '18px sans-serif';
+          ctx.fillText(p.emoji, p.x, p.y);
+        } else {
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r * (p.life / 30), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      for (const pp of popups) {
+        ctx.save();
+        ctx.font = `extrabold ${Math.round(15 * pp.scale)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = '#0F172A';
+        ctx.fillStyle = pp.color;
+        ctx.strokeText(pp.text, pp.x, pp.y);
+        ctx.fillText(pp.text, pp.x, pp.y);
+        ctx.restore();
+      }
+
+      drawHUD();
+
+      if (state === 'GAMEOVER') {
+        drawGameOver();
+      }
+
+      ctx.restore();
+    }
+
+    function loop() {
+      update();
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    document.getElementById('btnSkin').addEventListener('click', () => {
+      skinIdx = (skinIdx + 1) % SKINS.length;
+      document.getElementById('skinName').textContent = SKINS[skinIdx].name;
+      sfx.jump();
+      spawnPopup(W / 2, H / 2, `🎭 Đổi sang: ${SKINS[skinIdx].name}!`, '#EC4899', 1.2);
+    });
+
+    document.getElementById('btnSound').addEventListener('click', () => {
+      sfx.enabled = !sfx.enabled;
+      document.getElementById('btnSound').textContent = sfx.enabled ? '🔊 Tiếng' : '🔇 Tắt';
+    });
+
+    initGame();
+    loop();
+  </script>
+
+<!-- Floating Monetization Bar injected by MoneyHunter247 -->
+<div style="position:fixed;bottom:12px;right:12px;z-index:999999;background:rgba(15,23,42,0.95);border:1px solid #10b981;border-radius:12px;padding:8px 14px;display:flex;align-items:center;gap:10px;font-family:system-ui,sans-serif;box-shadow:0 8px 25px rgba(0,0,0,0.5);">
+  <span style="color:#f8fafc;font-size:13px;font-weight:600;">⚡ Want this full source code?</span>
+  <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=xaductrung%40gmail.com&item_name=Commercial+Source+Code+License&amount=49&currency_code=USD&return=https%3A%2F%2Ffiles.catbox.moe%2Fytghdr.zip" target="_blank" style="background:#ffc439;color:#111827;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">💳 Buy Source ($49 PayPal)</a>
+  <a href="https://xaductrung-rgb.github.io" target="_blank" style="background:#10b981;color:#022c22;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">🛒 All Bundles</a>
+</div>
+</body>
+</html>

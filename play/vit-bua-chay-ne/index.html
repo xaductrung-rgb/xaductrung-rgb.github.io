@@ -1,0 +1,1082 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Chạy Đi Chờ Chi: Thánh Ngố Né Đạn</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    canvas {
+      display: block;
+      touch-action: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 bg-slate-900 border-b border-slate-700 shrink-0">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl">🏃‍♂️🐕🩴</span>
+      <div>
+        <h1 class="font-extrabold text-base sm:text-lg leading-tight text-amber-300">CHẠY ĐI CHỜ CHI: THÁNH NGỐ NÉ ĐẠN</h1>
+        <p class="text-slate-400 text-xs">Di chuột / Chạm kéo (hoặc WASD / Mũi tên) để chạy né! Bấm Chuột/Space để Xoạc Háng Lướt Né!</p>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2 flex-wrap">
+      <button id="btnMode1P" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-400 text-slate-900 shadow">
+        👤 1 Người
+      </button>
+      <button id="btnMode2P" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-700 text-white">
+        👥 2 Người (Đẩy Nhau)
+      </button>
+      <button id="btnChar" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-pink-500 text-white shadow">
+        🎭 Thú Ngố: <span id="charLabel">Vịt Quần Đùi</span>
+      </button>
+      <button id="btnSound" class="px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-700 text-white">
+        🔊 Tiếng
+      </button>
+    </div>
+  </div>
+
+  <div class="relative flex-1 w-full overflow-hidden">
+    <canvas id="gameCanvas" class="w-full h-full"></canvas>
+  </div>
+
+  <script>
+    class CartoonSFX {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+      }
+      dash() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(240, now);
+        osc.frequency.exponentialRampToValueAtTime(720, now + 0.14);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.17);
+      }
+      nearMiss() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(520, now);
+        osc.frequency.exponentialRampToValueAtTime(980, now + 0.11);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.14);
+      }
+      bonk() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(380, now);
+        osc.frequency.exponentialRampToValueAtTime(75, now + 0.28);
+        gain.gain.setValueAtTime(0.26, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.31);
+      }
+      bark() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(190, now);
+        osc.frequency.exponentialRampToValueAtTime(340, now + 0.05);
+        osc.frequency.exponentialRampToValueAtTime(120, now + 0.12);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.14);
+      }
+      powerup() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+        [523, 659, 784, 1046].forEach((freq, i) => {
+          const now = this.ctx.currentTime + i * 0.055;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.14, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.13);
+        });
+      }
+    }
+
+    const sfx = new CartoonSFX();
+
+    const RUNNERS = [
+      { id: 'duck', name: 'Vịt Quần Đùi', color: '#FFD93D', pants: '#3B82F6', beak: '#FF5722', cry: 'QUẠC! CHẠY TỤT QUẦN!' },
+      { id: 'corgi', name: 'Corgi Mông Lắc', color: '#F4A261', pants: '#EF4444', beak: '#FF758F', cry: 'GÂU! ĐỪNG TÁP MÔNG TUI!' },
+      { id: 'cat', name: 'Mèo Béo Lác', color: '#A8DADC', pants: '#A855F7', beak: '#FF99AC', cry: 'MEO! MỆT ĐỨT HƠI RỒI!' },
+      { id: 'pig', name: 'Heo Hồng Tăng Động', color: '#FFAFCC', pants: '#10B981', beak: '#FB6F92', cry: 'ÉC ÉC! LĂN NHANH HƠN CHẠY!' },
+      { id: 'frog', name: 'Ếch Xanh Xoạc Háng', color: '#80ED99', pants: '#F59E0B', beak: '#FF4D6D', cry: 'ỘP! NÉ NHƯ PHIM CHƯỞNG!' }
+    ];
+
+    const NEAR_MISS_QUOTES = ['😏 HỤT NHÉ CON TRAI!', '💨 NÉ MƯỢT NHƯ SUNSILK!', '🩲 SUÝT RÁCH QUẦN ĐÙI!', '🔥 LÁCH LUỒN ĐỈNH KOUT!', '🤪 BÀ HÀNG XÓM NÉM HỤT!', '⚡ PHẢN XẠ THẦN SẦU!'];
+    const HIT_QUOTES = ['😭 Á ĐÙ! DẸP LÉP LUÔN!', '🍑 CHÓ TÁP ĐỎ MÔNG RỒI!', '🩴 DÉP TỔ ONG IN HÌNH LÊN MẶT!', '🤕 U ĐẦU 3 TẦNG HUHU!', '🛵 NINJA LEAD TẠT ĐẦU!'];
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    let W = 800;
+    let H = 500;
+    function resizeCanvas() {
+      const rect = canvas.parentElement.getBoundingClientRect();
+      W = Math.max(320, Math.floor(rect.width));
+      H = Math.max(320, Math.floor(rect.height));
+      canvas.width = W;
+      canvas.height = H;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    let gameMode = '1P';
+    let selectedChar = 0;
+    let gameState = 'PLAYING';
+    let score = 0;
+    let highScore = 0;
+    let gameTick = 0;
+    let screenShake = 0;
+    let waveAlert = '';
+    let waveAlertTimer = 0;
+
+    const keys = {};
+    window.addEventListener('keydown', (e) => {
+      keys[e.code] = true;
+      if (gameState === 'GAMEOVER' && (e.code === 'Space' || e.code === 'Enter')) {
+        initGame();
+        return;
+      }
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (players[0]) triggerDash(players[0]);
+      }
+      if (e.code === 'Enter' || e.code === 'ShiftRight') {
+        if (players[1]) triggerDash(players[1]);
+      }
+    });
+    window.addEventListener('keyup', (e) => {
+      keys[e.code] = false;
+    });
+
+    let pointerActive = false;
+    let pointerX = W / 2;
+    let pointerY = H / 2;
+
+    canvas.addEventListener('pointermove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      pointerX = (e.clientX - rect.left) * (W / rect.width);
+      pointerY = (e.clientY - rect.top) * (H / rect.height);
+      pointerActive = true;
+    });
+
+    canvas.addEventListener('pointerdown', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      pointerX = (e.clientX - rect.left) * (W / rect.width);
+      pointerY = (e.clientY - rect.top) * (H / rect.height);
+      pointerActive = true;
+
+      if (gameState === 'GAMEOVER') {
+        initGame();
+        return;
+      }
+      if (players[0]) {
+        triggerDash(players[0], pointerX, pointerY);
+      }
+    });
+
+    function createRunner(id, x, y, charIdx, label) {
+      return {
+        id, x, y, vx: 0, vy: 0, charIdx, label,
+        hearts: 3, maxHearts: 3, score: 0,
+        dashTimer: 0, dashCooldown: 0, invincibleTimer: 0, superPantsTimer: 0,
+        squashedTimer: 0, buttBitTimer: 0, bumpSize: 0, legPhase: 0, facing: 1, eyeAngle: 0
+      };
+    }
+
+    let players = [];
+    let hazards = [];
+    let pickups = [];
+    let particles = [];
+    let floatingTexts = [];
+
+    function initGame() {
+      hazards = [];
+      pickups = [];
+      particles = [];
+      floatingTexts = [];
+      score = 0;
+      gameTick = 0;
+      gameState = 'PLAYING';
+
+      if (gameMode === '1P') {
+        players = [createRunner(1, W * 0.5, H * 0.62, selectedChar, 'Bạn')];
+      } else {
+        players = [
+          createRunner(1, W * 0.36, H * 0.62, selectedChar, 'P1 (WASD/Chuột)'),
+          createRunner(2, W * 0.64, H * 0.62, (selectedChar + 1) % RUNNERS.length, 'P2 (Mũi tên/Enter)')
+        ];
+      }
+
+      spawnText(W / 2, H * 0.35, '🏃 CHẠY NÉ DÉP TỔ ONG, CHÓ RƯỢT & SẦU RIÊNG RỤNG!', '#F59E0B', 1.25);
+    }
+
+    function triggerDash(p, targetX = null, targetY = null) {
+      if (p.dashCooldown > 0 || p.dashTimer > 0) return;
+      p.dashTimer = 18;
+      p.dashCooldown = 42;
+      sfx.dash();
+
+      let dx = p.vx;
+      let dy = p.vy;
+      if (targetX !== null && targetY !== null) {
+        dx = targetX - p.x;
+        dy = targetY - p.y;
+      }
+      const len = Math.hypot(dx, dy);
+      if (len > 2) {
+        p.vx = (dx / len) * 11.5;
+        p.vy = (dy / len) * 11.5;
+        p.facing = p.vx >= 0 ? 1 : -1;
+      } else {
+        p.vx = p.facing * 11.5;
+        p.vy = 0;
+      }
+
+      spawnParticles(p.x, p.y + 15, '#38BDF8', 10, '💨');
+      spawnText(p.x, p.y - 35, 'XOẠC HÁNG NÉ!', '#38BDF8', 1.05);
+    }
+
+    function spawnText(x, y, text, color = '#FACC15', scale = 1) {
+      floatingTexts.push({ x, y, vy: -1.7, text, color, scale, life: 52 });
+    }
+
+    function spawnParticles(x, y, color, count = 10, emoji = null) {
+      for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const s = 2 + Math.random() * 5;
+        particles.push({
+          x, y,
+          vx: Math.cos(a) * s,
+          vy: Math.sin(a) * s - 1,
+          r: 4 + Math.random() * 4,
+          color,
+          emoji: i < 2 ? emoji : null,
+          life: 25 + Math.floor(Math.random() * 14)
+        });
+      }
+    }
+
+    function spawnHazard() {
+      const difficulty = Math.min(2.2, 1 + gameTick / 2200);
+      const roll = Math.random();
+
+      if (roll < 0.34) {
+        const targetP = players[Math.floor(Math.random() * players.length)];
+        const fromLeft = Math.random() < 0.5;
+        const startX = fromLeft ? -35 : W + 35;
+        const startY = 85 + Math.random() * (H - 135);
+        const angle = Math.atan2(targetP.y - startY, targetP.x - startX);
+        const speed = (6.8 + Math.random() * 2.5) * difficulty;
+
+        hazards.push({
+          kind: 'slipper', emoji: '🩴', name: 'Dép Tổ Ong',
+          x: startX, y: startY,
+          vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+          radius: 21, rot: 0, vRot: 0.28, warnTimer: 26, nearMissed: false
+        });
+      } else if (roll < 0.62) {
+        const fromLeft = Math.random() < 0.5;
+        const yPos = 95 + Math.random() * (H - 145);
+        const speed = (5.2 + Math.random() * 2.2) * difficulty;
+        sfx.bark();
+        hazards.push({
+          kind: 'dog', emoji: '🐕', name: 'Cậu Vàng Rượt',
+          x: fromLeft ? -40 : W + 40, y: yPos,
+          vx: (fromLeft ? 1 : -1) * speed, vy: (Math.random() - 0.5) * 1.6,
+          radius: 25, rot: 0, vRot: 0, warnTimer: 18, nearMissed: false
+        });
+      } else if (roll < 0.84) {
+        const targetP = players[Math.floor(Math.random() * players.length)];
+        const dropX = Math.max(55, Math.min(W - 55, targetP.x + (Math.random() - 0.5) * 150));
+        const dropY = Math.max(95, Math.min(H - 55, targetP.y + (Math.random() - 0.5) * 90));
+        hazards.push({
+          kind: 'drop', emoji: Math.random() < 0.5 ? '🦔' : '🪴', name: 'Sầu Riêng Rụng',
+          x: dropX, y: dropY, z: 240, vz: -4.2 * difficulty, vx: 0, vy: 0,
+          radius: 28, rot: 0, vRot: 0.1, warnTimer: 0, nearMissed: false
+        });
+      } else {
+        const fromLeft = Math.random() < 0.5;
+        const startY = 110 + Math.random() * (H - 170);
+        hazards.push({
+          kind: 'scooter', emoji: '🛵', name: 'Ninja Lead Tạt Đầu',
+          x: fromLeft ? -45 : W + 45, y: startY,
+          vx: (fromLeft ? 1 : -1) * 5.8 * difficulty, vy: 0,
+          curveDir: Math.random() < 0.5 ? 1 : -1,
+          radius: 27, rot: 0, vRot: 0, warnTimer: 22, nearMissed: false
+        });
+      }
+    }
+
+    function spawnPickup() {
+      const types = [
+        { kind: 'tea', emoji: '🧋', name: 'Trà Sữa Hồi Tim', color: '#EC4899' },
+        { kind: 'pants', emoji: '🩲', name: 'Quần Sịp Đỏ Bất Tử', color: '#EF4444' },
+        { kind: 'coin', emoji: '🍗', name: 'Đùi Gà Siêu Điểm', color: '#F59E0B' }
+      ];
+      const pick = types[Math.floor(Math.random() * types.length)];
+      pickups.push({
+        ...pick,
+        x: 70 + Math.random() * (W - 140),
+        y: 95 + Math.random() * (H - 150),
+        radius: 22, life: 360
+      });
+    }
+
+    function update() {
+      if (screenShake > 0) screenShake *= 0.85;
+      if (waveAlertTimer > 0) waveAlertTimer--;
+
+      if (gameState !== 'PLAYING') return;
+
+      gameTick++;
+
+      if (gameTick % 15 === 0) {
+        score += 2;
+        for (const p of players) {
+          if (p.hearts > 0) p.score += 2;
+        }
+        highScore = Math.max(highScore, score);
+      }
+
+      if (gameTick % 850 === 450) {
+        waveAlert = '🚨 BÁO ĐỘNG: ĐÀN CHÓ & MƯA DÉP TỔ ONG ĐỔ BỘ! CHẠY LẸ! 🚨';
+        waveAlertTimer = 180;
+        sfx.powerup();
+        for (let k = 0; k < 4; k++) spawnHazard();
+      }
+
+      const spawnRate = Math.max(20, 46 - Math.floor(gameTick / 380));
+      if (gameTick % spawnRate === 0) spawnHazard();
+      if (gameTick % 210 === 100) spawnPickup();
+
+      for (const p of players) {
+        if (p.dashTimer > 0) p.dashTimer--;
+        if (p.dashCooldown > 0) p.dashCooldown--;
+        if (p.invincibleTimer > 0) p.invincibleTimer--;
+        if (p.superPantsTimer > 0) p.superPantsTimer--;
+        if (p.squashedTimer > 0) p.squashedTimer--;
+        if (p.buttBitTimer > 0) p.buttBitTimer--;
+        if (p.bumpSize > 0) p.bumpSize = Math.max(0, p.bumpSize - 0.06);
+
+        const baseSpeed = p.buttBitTimer > 0 ? 6.8 : (p.superPantsTimer > 0 ? 6.4 : 5.0);
+
+        if (p.dashTimer <= 0) {
+          let ax = 0;
+          let ay = 0;
+
+          if (p.id === 1) {
+            if (keys['KeyA'] || (gameMode === '1P' && keys['ArrowLeft'])) ax -= 1;
+            if (keys['KeyD'] || (gameMode === '1P' && keys['ArrowRight'])) ax += 1;
+            if (keys['KeyW'] || (gameMode === '1P' && keys['ArrowUp'])) ay -= 1;
+            if (keys['KeyS'] || (gameMode === '1P' && keys['ArrowDown'])) ay += 1;
+
+            if (ax === 0 && ay === 0 && pointerActive) {
+              const dx = pointerX - p.x;
+              const dy = pointerY - p.y;
+              const dist = Math.hypot(dx, dy);
+              if (dist > 14) {
+                ax = dx / dist;
+                ay = dy / dist;
+              }
+            }
+          } else if (p.id === 2) {
+            if (keys['ArrowLeft']) ax -= 1;
+            if (keys['ArrowRight']) ax += 1;
+            if (keys['ArrowUp']) ay -= 1;
+            if (keys['ArrowDown']) ay += 1;
+          }
+
+          const mag = Math.hypot(ax, ay);
+          if (mag > 0.01) {
+            p.vx = (ax / mag) * baseSpeed;
+            p.vy = (ay / mag) * baseSpeed;
+            if (Math.abs(p.vx) > 0.4) p.facing = p.vx > 0 ? 1 : -1;
+            p.legPhase += 0.45;
+          } else {
+            p.vx *= 0.72;
+            p.vy *= 0.72;
+            p.legPhase += 0.1;
+          }
+        } else {
+          p.legPhase += 0.6;
+        }
+
+        p.x += p.vx;
+        p.y += p.vy;
+        p.x = Math.max(32, Math.min(W - 32, p.x));
+        p.y = Math.max(82, Math.min(H - 36, p.y));
+        p.eyeAngle += 0.15;
+      }
+
+      if (gameMode === '2P' && players.length === 2) {
+        const p1 = players[0];
+        const p2 = players[1];
+        const dx = p2.x - p1.x;
+        const dy = p2.y - p1.y;
+        const d = Math.hypot(dx, dy);
+        if (d < 46 && d > 0.1) {
+          const push = 7.5;
+          p1.x -= (dx / d) * push;
+          p1.y -= (dy / d) * push;
+          p2.x += (dx / d) * push;
+          p2.y += (dy / d) * push;
+          sfx.nearMiss();
+          spawnText((p1.x + p2.x) / 2, (p1.y + p2.y) / 2 - 20, '💥 HÚC BỤNG ĐẨY NHAU!', '#EC4899', 1.1);
+        }
+      }
+
+      for (let i = pickups.length - 1; i >= 0; i--) {
+        const pk = pickups[i];
+        pk.life--;
+        if (pk.life <= 0) {
+          pickups.splice(i, 1);
+          continue;
+        }
+        for (const p of players) {
+          if (Math.hypot(p.x - pk.x, p.y - pk.y) < 38) {
+            sfx.powerup();
+            if (pk.kind === 'tea') {
+              p.hearts = Math.min(p.maxHearts, p.hearts + 1);
+              spawnText(pk.x, pk.y, '🧋 FULL TOPPING! +1 TIM!', '#EC4899', 1.2);
+            } else if (pk.kind === 'pants') {
+              p.superPantsTimer = 260;
+              spawnText(pk.x, pk.y, '🩲 SIÊU NHÂN QUẦN SỊP ĐỎ! HÚC TẤT CẢ!', '#EF4444', 1.3);
+            } else {
+              score += 50;
+              p.score += 50;
+              spawnText(pk.x, pk.y, '🍗 ĐÙI GÀ GIÒN! +50 ĐIỂM!', '#F59E0B', 1.2);
+            }
+            spawnParticles(pk.x, pk.y, pk.color, 12, pk.emoji);
+            pickups.splice(i, 1);
+            break;
+          }
+        }
+      }
+
+      for (let i = hazards.length - 1; i >= 0; i--) {
+        const hz = hazards[i];
+        if (hz.warnTimer > 0) {
+          hz.warnTimer--;
+          continue;
+        }
+        if (hz.kind === 'drop') {
+          hz.z += hz.vz;
+          hz.vz -= 0.18;
+          if (hz.z <= 0) {
+            spawnParticles(hz.x, hz.y, '#84CC16', 12, hz.emoji);
+            for (const p of players) {
+              const d = Math.hypot(p.x - hz.x, p.y - hz.y);
+              if (d < hz.radius + 22) {
+                hitPlayer(p, hz);
+              } else if (d < hz.radius + 58) {
+                rewardNearMiss(p, hz);
+              }
+            }
+            hazards.splice(i, 1);
+          }
+          continue;
+        }
+        if (hz.kind === 'scooter') {
+          hz.vy += hz.curveDir * 0.08;
+        }
+        hz.x += hz.vx;
+        hz.y += hz.vy;
+        hz.rot += hz.vRot;
+
+        let removed = false;
+        for (const p of players) {
+          const d = Math.hypot(p.x - hz.x, p.y - hz.y);
+          const hitDist = hz.radius + 17;
+
+          if (d < hitDist) {
+            if (p.dashTimer > 0) {
+              if (!hz.nearMissed) {
+                hz.nearMissed = true;
+                rewardNearMiss(p, hz, true);
+              }
+            } else {
+              hitPlayer(p, hz);
+              hazards.splice(i, 1);
+              removed = true;
+              break;
+            }
+          } else if (!hz.nearMissed && d < hitDist + 32) {
+            hz.nearMissed = true;
+            rewardNearMiss(p, hz, false);
+          }
+        }
+        if (removed) continue;
+        if (hz.x < -90 || hz.x > W + 90 || hz.y < -90 || hz.y > H + 90) {
+          hazards.splice(i, 1);
+        }
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.vy += 0.15;
+        pt.life--;
+        if (pt.life <= 0) particles.splice(i, 1);
+      }
+
+      for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y += ft.vy;
+        ft.life--;
+        if (ft.life <= 0) floatingTexts.splice(i, 1);
+      }
+    }
+
+    function rewardNearMiss(p, hz, isDash) {
+      sfx.nearMiss();
+      const bonus = isDash ? 40 : 25;
+      score += bonus;
+      p.score += bonus;
+      highScore = Math.max(highScore, score);
+      const quote = NEAR_MISS_QUOTES[Math.floor(Math.random() * NEAR_MISS_QUOTES.length)];
+      spawnText(p.x, p.y - 32, `${quote} +${bonus}`, '#10B981', 1.12);
+    }
+
+    function hitPlayer(p, hz) {
+      if (p.superPantsTimer > 0) {
+        sfx.nearMiss();
+        score += 35;
+        p.score += 35;
+        spawnParticles(hz.x, hz.y, '#FACC15', 14, '💥');
+        spawnText(hz.x, hz.y, `SIÊU NHÂN HÚC VĂNG ${hz.emoji}! +35`, '#FACC15', 1.2);
+        return;
+      }
+      if (p.invincibleTimer > 0) return;
+
+      sfx.bonk();
+      screenShake = 12;
+      p.invincibleTimer = 55;
+      p.bumpSize = 22;
+
+      if (hz.kind === 'drop') p.squashedTimer = 95;
+      else if (hz.kind === 'dog') p.buttBitTimer = 110;
+
+      const msg = HIT_QUOTES[Math.floor(Math.random() * HIT_QUOTES.length)];
+      spawnParticles(p.x, p.y, '#EF4444', 16, '💫');
+      spawnText(p.x, p.y - 25, msg, '#EF4444', 1.25);
+
+      if (gameMode === '1P') {
+        p.hearts--;
+        if (p.hearts <= 0) {
+          gameState = 'GAMEOVER';
+          highScore = Math.max(highScore, score);
+        }
+      } else {
+        p.score = Math.max(0, p.score - 30);
+      }
+    }
+
+    function drawArena() {
+      ctx.fillStyle = '#FEF3C7';
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.fillStyle = '#86EFAC';
+      ctx.fillRect(0, 0, W, 72);
+      ctx.strokeStyle = '#15803D';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, 72);
+      ctx.lineTo(W, 72);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(217, 119, 6, 0.14)';
+      ctx.lineWidth = 2;
+      const grid = 60;
+      for (let x = 0; x < W; x += grid) {
+        ctx.beginPath();
+        ctx.moveTo(x, 72);
+        ctx.lineTo(x, H);
+        ctx.stroke();
+      }
+      for (let y = 72; y < H; y += grid) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(W, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawRunner(p) {
+      const ch = RUNNERS[p.charIdx];
+      ctx.save();
+      ctx.translate(p.x, p.y);
+
+      if (p.invincibleTimer > 0 && Math.floor(gameTick / 3) % 2 === 0 && p.superPantsTimer <= 0) {
+        ctx.globalAlpha = 0.6;
+      }
+
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.beginPath();
+      ctx.ellipse(0, 24, 22, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (p.squashedTimer > 0) {
+        ctx.scale(1.45, 0.48);
+      } else if (p.dashTimer > 0) {
+        ctx.scale(1.35, 0.68);
+        ctx.rotate((p.facing * 0.25));
+      }
+
+      const speedMag = Math.hypot(p.vx, p.vy);
+      const tilt = speedMag > 0.5 ? p.facing * 0.16 : 0;
+      ctx.rotate(tilt);
+
+      ctx.strokeStyle = '#1E293B';
+      ctx.lineWidth = 3;
+      if (p.dashTimer > 0) {
+        ctx.fillStyle = ch.beak;
+        ctx.beginPath();
+        ctx.ellipse(-28, 18, 12, 6, -0.1, 0, Math.PI * 2);
+        ctx.ellipse(28, 18, 12, 6, 0.1, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      } else if (speedMag > 1.2) {
+        ctx.save();
+        ctx.translate(0, 16);
+        ctx.rotate(p.legPhase);
+        ctx.strokeStyle = ch.beak;
+        ctx.lineWidth = 4;
+        for (let k = 0; k < 4; k++) {
+          ctx.rotate(Math.PI / 2);
+          ctx.beginPath();
+          ctx.arc(0, 0, 12, 0, 1.1);
+          ctx.stroke();
+        }
+        ctx.restore();
+      } else {
+        ctx.fillStyle = ch.beak;
+        ctx.beginPath();
+        ctx.ellipse(-10, 20, 8, 5, 0, 0, Math.PI * 2);
+        ctx.ellipse(10, 20, 8, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = ch.color;
+      ctx.strokeStyle = '#1E293B';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 24, 22, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = p.superPantsTimer > 0 ? '#EF4444' : ch.pants;
+      ctx.beginPath();
+      ctx.arc(0, 4, 23, 0.15, Math.PI - 0.15);
+      ctx.fill();
+      ctx.stroke();
+
+      if (p.buttBitTimer > 0) {
+        ctx.fillStyle = '#EF4444';
+        ctx.beginPath();
+        ctx.arc(-p.facing * 22, 8, 10 + Math.sin(gameTick * 0.6) * 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      if (p.superPantsTimer > 0) {
+        ctx.fillStyle = '#EF4444';
+        ctx.beginPath();
+        ctx.moveTo(-p.facing * 10, -10);
+        ctx.lineTo(-p.facing * 42, -4 + Math.sin(gameTick * 0.5) * 8);
+        ctx.lineTo(-p.facing * 36, 14);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = '#1E293B';
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-14, -2);
+      ctx.lineTo(-p.facing * 30, -8 + Math.sin(p.legPhase) * 6);
+      ctx.stroke();
+
+      const eyeX = p.facing * 6;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.arc(eyeX - 8, -9, 8.5, 0, Math.PI * 2);
+      ctx.arc(eyeX + 8, -9, 10.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#0F172A';
+      ctx.beginPath();
+      ctx.arc(eyeX - 8 + Math.cos(p.eyeAngle) * 3, -9 + Math.sin(p.eyeAngle) * 3, 3.2, 0, Math.PI * 2);
+      ctx.arc(eyeX + 8 - Math.cos(p.eyeAngle) * 3.5, -9 + Math.sin(p.eyeAngle) * 3.5, 3.8, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (p.bumpSize > 1) {
+        ctx.fillStyle = '#FB7185';
+        ctx.beginPath();
+        ctx.ellipse(0, -24 - p.bumpSize * 0.3, 9, p.bumpSize * 0.55, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = '#FB7185';
+      ctx.beginPath();
+      ctx.ellipse(-p.facing * 14, 2 + Math.sin(gameTick * 0.4) * 3, 11, 5, 0.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = ch.beak;
+      ctx.beginPath();
+      ctx.ellipse(p.facing * 12, -1, 11, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      if (speedMag > 1.5 && gameTick % 6 < 3) {
+        ctx.fillStyle = '#38BDF8';
+        ctx.beginPath();
+        ctx.arc(-p.facing * 22, -18, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.restore();
+
+      ctx.save();
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#0F172A';
+      ctx.fillText(gameMode === '2P' ? `${p.label}: ${p.score}đ` : p.label, p.x, p.y + 37);
+      ctx.restore();
+    }
+
+    function drawHazardsAndPickups() {
+      for (const pk of pickups) {
+        ctx.save();
+        ctx.translate(pk.x, pk.y + Math.sin(gameTick * 0.12) * 4);
+        ctx.fillStyle = 'rgba(255,255,255,0.88)';
+        ctx.strokeStyle = pk.color;
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, pk.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.font = '24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(pk.emoji, 0, 2);
+        ctx.restore();
+      }
+
+      for (const hz of hazards) {
+        if (hz.warnTimer > 0) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(239, 68, 68, 0.55)';
+          ctx.lineWidth = 3;
+          ctx.setLineDash([8, 6]);
+          ctx.beginPath();
+          ctx.moveTo(hz.x, hz.y);
+          ctx.lineTo(hz.x + hz.vx * 45, hz.y + hz.vy * 45);
+          ctx.stroke();
+
+          const edgeX = Math.max(26, Math.min(W - 26, hz.x));
+          const edgeY = Math.max(85, Math.min(H - 26, hz.y));
+          ctx.fillStyle = '#EF4444';
+          ctx.beginPath();
+          ctx.arc(edgeX, edgeY, 16, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.font = '18px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(hz.emoji, edgeX, edgeY + 1);
+          ctx.restore();
+          continue;
+        }
+
+        if (hz.kind === 'drop') {
+          const progress = 1 - Math.max(0, hz.z / 240);
+          ctx.save();
+          ctx.fillStyle = `rgba(220, 38, 38, ${0.18 + progress * 0.35})`;
+          ctx.strokeStyle = '#DC2626';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.ellipse(hz.x, hz.y, hz.radius * (0.4 + progress * 0.7), hz.radius * 0.55 * (0.4 + progress * 0.7), 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+
+          ctx.translate(hz.x, hz.y - hz.z);
+          ctx.rotate(gameTick * 0.15);
+          ctx.font = '30px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(hz.emoji, 0, 0);
+          ctx.restore();
+          continue;
+        }
+
+        ctx.save();
+        ctx.translate(hz.x, hz.y);
+        if (hz.kind === 'slipper') ctx.rotate(hz.rot);
+        else if (hz.vx > 0) ctx.scale(-1, 1);
+
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.18)';
+        ctx.beginPath();
+        ctx.arc(0, 0, hz.radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.font = '30px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(hz.emoji, 0, 2);
+        ctx.restore();
+      }
+    }
+
+    function drawHUD() {
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.82)';
+      ctx.beginPath();
+      ctx.roundRect(12, 8, 240, 56, 12);
+      ctx.fill();
+
+      const p = players[0];
+      ctx.fillStyle = '#FACC15';
+      ctx.font = 'extrabold 15px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`🏆 ĐIỂM NÉ: ${score} (Kỷ lục: ${highScore})`, 22, 28);
+
+      if (gameMode === '1P') {
+        let hearts = '';
+        for (let i = 0; i < p.maxHearts; i++) hearts += i < p.hearts ? '❤️ ' : '🖤 ';
+        const dashReady = p.dashCooldown <= 0 ? '⚡ XOẠC NÉ: SẴN SÀNG!' : '⏳ Đang hồi chân...';
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillText(`${hearts} | ${dashReady}`, 22, 50);
+      } else {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillText(`P1: ${players[0].score}đ  ⚔️  P2: ${players[1].score}đ`, 22, 50);
+      }
+
+      const btnX = W - 135;
+      const btnY = H - 52;
+      ctx.fillStyle = p.dashCooldown <= 0 ? '#0EA5E9' : '#64748B';
+      ctx.beginPath();
+      ctx.roundRect(btnX, btnY, 122, 40, 12);
+      ctx.fill();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = 'extrabold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('💨 XOẠC NÉ (SPACE)', btnX + 61, btnY + 24);
+
+      if (waveAlertTimer > 0) {
+        ctx.fillStyle = 'rgba(220, 38, 38, 0.9)';
+        ctx.beginPath();
+        ctx.roundRect(W / 2 - 210, 14, 420, 32, 10);
+        ctx.fill();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'extrabold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(waveAlert, W / 2, 34);
+      }
+    }
+
+    function drawGameOver() {
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+      ctx.fillRect(0, 0, W, H);
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      ctx.font = 'extrabold 26px sans-serif';
+      ctx.fillText('🐕 BỊ CHÓ RƯỢT & DÉP TỔ ONG TÓM GỌN! 🩴', W / 2, H / 2 - 50);
+
+      ctx.fillStyle = '#FACC15';
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillText(`Điểm Chạy Né: ${score}  |  Kỷ lục: ${highScore}`, W / 2, H / 2 - 12);
+
+      const rank = score > 500 ? 'Thánh Lách Luật Phố Phường' : score > 220 ? 'Cao Thủ Xoạc Háng' : 'Thánh Ngố Chạy Chậm';
+      ctx.fillStyle = '#A7F3D0';
+      ctx.font = '15px sans-serif';
+      ctx.fillText(`Danh hiệu: "${rank}"`, W / 2, H / 2 + 18);
+
+      ctx.fillStyle = '#F59E0B';
+      ctx.beginPath();
+      ctx.roundRect(W / 2 - 125, H / 2 + 38, 250, 44, 14);
+      ctx.fill();
+
+      ctx.fillStyle = '#0F172A';
+      ctx.font = 'extrabold 16px sans-serif';
+      ctx.fillText('🔄 CHẠM ĐỂ CHẠY LẠI NGAY!', W / 2, H / 2 + 65);
+    }
+
+    function render() {
+      ctx.save();
+      if (screenShake > 0.5) {
+        ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+      }
+
+      drawArena();
+      drawHazardsAndPickups();
+
+      for (const p of players) {
+        drawRunner(p);
+      }
+
+      for (const pt of particles) {
+        if (pt.emoji) {
+          ctx.font = '18px sans-serif';
+          ctx.fillText(pt.emoji, pt.x, pt.y);
+        } else {
+          ctx.fillStyle = pt.color;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, pt.r * (pt.life / 35), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      for (const ft of floatingTexts) {
+        ctx.save();
+        ctx.font = `extrabold ${Math.round(15 * ft.scale)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = '#0F172A';
+        ctx.fillStyle = ft.color;
+        ctx.strokeText(ft.text, ft.x, ft.y);
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+      }
+
+      drawHUD();
+
+      if (gameState === 'GAMEOVER') {
+        drawGameOver();
+      }
+
+      ctx.restore();
+    }
+
+    function loop() {
+      update();
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    const btnMode1P = document.getElementById('btnMode1P');
+    const btnMode2P = document.getElementById('btnMode2P');
+    const btnChar = document.getElementById('btnChar');
+    const charLabel = document.getElementById('charLabel');
+    const btnSound = document.getElementById('btnSound');
+
+    btnMode1P.addEventListener('click', () => {
+      gameMode = '1P';
+      btnMode1P.className = 'px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-400 text-slate-900 shadow';
+      btnMode2P.className = 'px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-700 text-white';
+      initGame();
+    });
+
+    btnMode2P.addEventListener('click', () => {
+      gameMode = '2P';
+      btnMode2P.className = 'px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-400 text-slate-900 shadow';
+      btnMode1P.className = 'px-3 py-1.5 rounded-xl text-xs font-extrabold bg-slate-700 text-white';
+      initGame();
+    });
+
+    btnChar.addEventListener('click', () => {
+      selectedChar = (selectedChar + 1) % RUNNERS.length;
+      const ch = RUNNERS[selectedChar];
+      charLabel.textContent = ch.name;
+      if (players[0]) players[0].charIdx = selectedChar;
+      if (players[1]) players[1].charIdx = (selectedChar + 1) % RUNNERS.length;
+      sfx.dash();
+      spawnText(W / 2, H / 2, ch.cry, '#EC4899', 1.25);
+    });
+
+    btnSound.addEventListener('click', () => {
+      sfx.enabled = !sfx.enabled;
+      btnSound.textContent = sfx.enabled ? '🔊 Tiếng' : '🔇 Tắt';
+    });
+
+    initGame();
+    loop();
+  </script>
+
+<!-- Floating Monetization Bar injected by MoneyHunter247 -->
+<div style="position:fixed;bottom:12px;right:12px;z-index:999999;background:rgba(15,23,42,0.95);border:1px solid #10b981;border-radius:12px;padding:8px 14px;display:flex;align-items:center;gap:10px;font-family:system-ui,sans-serif;box-shadow:0 8px 25px rgba(0,0,0,0.5);">
+  <span style="color:#f8fafc;font-size:13px;font-weight:600;">⚡ Want this full source code?</span>
+  <a href="https://www.paypal.com/cgi-bin/webscr?cmd=_xclick&business=xaductrung%40gmail.com&item_name=Commercial+Source+Code+License&amount=49&currency_code=USD&return=https%3A%2F%2Ffiles.catbox.moe%2Fytghdr.zip" target="_blank" style="background:#ffc439;color:#111827;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">💳 Buy Source ($49 PayPal)</a>
+  <a href="https://xaductrung-rgb.github.io" target="_blank" style="background:#10b981;color:#022c22;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:800;text-decoration:none;">🛒 All Bundles</a>
+</div>
+</body>
+</html>
