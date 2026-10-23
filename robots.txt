@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://xaductrung-rgb.github.io/sitemap.xml
